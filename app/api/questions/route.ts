@@ -1,8 +1,9 @@
 import { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/auth/session";
-import { getAllQuestions, createQuestion } from "@/lib/data/store";
-import { prisma } from "@/lib/prisma";
+import { getAllQuestions, createQuestion, getQuestionBankStats } from "@/lib/data/store";
 import { apiSuccess, apiError, apiUnauthorized, apiForbidden } from "@/lib/api/response";
+import { questionSchema } from "@/lib/validations/test";
+import { validateRequestBody } from "@/lib/validations/api";
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,19 +13,21 @@ export async function GET(req: NextRequest) {
     const search = url.searchParams.get("search") || undefined;
     const includeStats = url.searchParams.get("stats") === "true";
 
-    let questions: any[] = await getAllQuestions({ subject, difficulty });
+    let questions: any[] = await getAllQuestions({ subject, difficulty, search });
     if (search) {
       const q = search.toLowerCase();
       questions = questions.filter(
         (item: any) =>
           (item.questionText && item.questionText.toLowerCase().includes(q)) ||
           (item.topic && item.topic.toLowerCase().includes(q)) ||
-          (item.subject && item.subject.toLowerCase().includes(q))
+          (item.subject && item.subject.toLowerCase().includes(q)) ||
+          (item.explanation && item.explanation.toLowerCase().includes(q)) ||
+          (Array.isArray(item.options) &&
+            item.options.some((opt: any) => opt.optionText && opt.optionText.toLowerCase().includes(q)))
       );
     }
 
     if (includeStats) {
-      const { getQuestionBankStats } = await import("@/lib/data/store");
       const stats = await getQuestionBankStats();
       return apiSuccess({ questions, stats });
     }
@@ -38,7 +41,12 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     await requireAdmin();
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
+
+    const validation = validateRequestBody(questionSchema, body);
+    if (!validation.success) {
+      return validation.response;
+    }
 
     const {
       questionText,
@@ -51,11 +59,7 @@ export async function POST(req: NextRequest) {
       negativeMarks,
       options,
       correctNumericalAnswer,
-    } = body;
-
-    if (!questionText || !subject) {
-      return apiError("Question text and subject are required.");
-    }
+    } = validation.data;
 
     const question = await createQuestion({
       questionText,

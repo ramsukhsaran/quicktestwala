@@ -27,7 +27,8 @@ export default async function AdminTestsPage() {
       </div>
 
       <Card className="border-border">
-        <CardContent className="p-0 overflow-x-auto">
+        {/* Desktop Table View */}
+        <CardContent className="p-0 overflow-x-auto hidden md:block">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-border bg-muted/30 text-muted-foreground uppercase font-semibold">
@@ -89,6 +90,67 @@ export default async function AdminTestsPage() {
             </tbody>
           </table>
         </CardContent>
+
+        {/* Mobile Cards View */}
+        <div className="md:hidden divide-y divide-border">
+          {tests.map((test) => (
+            <div key={test.id} className="p-4 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <h3 className="font-bold text-sm text-foreground">{test.title}</h3>
+                  <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+                    <span className="flex items-center gap-1">
+                      <Timer className="h-3 w-3" />
+                      {formatDuration(test.durationMinutes)}
+                    </span>
+                    <span>•</span>
+                    <span className="font-mono">
+                      {(("questionIds" in test ? test.questionIds : test.testQuestions?.length) || 0)} Items
+                    </span>
+                  </div>
+                </div>
+                <Badge variant="success" className="text-[10px] shrink-0">
+                  {test.status}
+                </Badge>
+              </div>
+
+              {/* Specs Grid */}
+              <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-muted/40 text-xs font-mono">
+                <div>
+                  <span className="text-[10px] text-muted-foreground uppercase block">Total Marks</span>
+                  <span className="font-bold text-foreground">{test.totalMarks} Marks</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-muted-foreground uppercase block">Marking Ratio</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">+{test.marksPerQuestion}</span>
+                  <span className="text-rose-600 dark:text-rose-400 ml-1">(-{test.negativeMarkingRate})</span>
+                </div>
+              </div>
+
+              {/* Mobile Actions Buttons */}
+              <div className="grid grid-cols-3 gap-2 pt-1">
+                <Link href={`/admin/tests/${test.id}/questions`} className="col-span-3 sm:col-span-1">
+                  <Button size="sm" className="w-full h-8 text-xs font-semibold gap-1.5 shadow-sm">
+                    <Layers className="h-3.5 w-3.5" />
+                    Manage Questions
+                  </Button>
+                </Link>
+                <Link href={`/admin/tests/${test.id}/edit`} className="col-span-1">
+                  <Button variant="outline" size="sm" className="w-full h-8 text-xs gap-1">
+                    <PencilLine className="h-3.5 w-3.5" />
+                    Edit
+                  </Button>
+                </Link>
+                <Link href={`/student/tests/${test.id}/instructions`} target="_blank" className="col-span-2">
+                  <Button variant="outline" size="sm" className="w-full h-8 text-xs gap-1 text-muted-foreground hover:text-foreground">
+                    <Eye className="h-3.5 w-3.5" />
+                    Preview CBT
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
       </Card>
     </div>
   );

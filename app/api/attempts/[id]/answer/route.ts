@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { requireAuth } from "@/lib/auth/session";
 import { saveAttemptAnswer } from "@/lib/data/store";
 import { apiSuccess, apiError, apiUnauthorized } from "@/lib/api/response";
+import { answerAttemptBodySchema, validateRequestBody } from "@/lib/validations/api";
 
 export async function POST(
   req: NextRequest,
@@ -10,7 +11,12 @@ export async function POST(
   try {
     await requireAuth();
     const { id } = await params;
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
+
+    const validation = validateRequestBody(answerAttemptBodySchema, body);
+    if (!validation.success) {
+      return validation.response;
+    }
 
     const {
       questionId,
@@ -19,12 +25,7 @@ export async function POST(
       isMarkedForReview,
       isVisited,
       timeSpentSeconds,
-      remainingTimeSeconds,
-    } = body;
-
-    if (!questionId) {
-      return apiError("questionId is required");
-    }
+    } = validation.data;
 
     const res = await saveAttemptAnswer({
       attemptId: id,
@@ -34,7 +35,7 @@ export async function POST(
       isMarkedForReview,
       isVisited,
       timeSpentSeconds,
-      remainingTimeSeconds,
+      remainingTimeSeconds: body?.remainingTimeSeconds,
     });
 
     return apiSuccess(res, "Answer recorded");

@@ -232,50 +232,48 @@ export function TestQuestionManager({ testId, initialData }: TestQuestionManager
         </div>
 
         {/* Live Calculation Pill */}
-        <div className="flex items-center gap-3 bg-muted/40 p-2.5 px-4 rounded-xl border border-border">
-          <div className="text-right">
-            <span className="text-[10px] text-muted-foreground uppercase font-semibold block">Linked Questions</span>
-            <span className="text-sm font-bold font-mono">{linked.length} Questions</span>
+        <div className="grid grid-cols-3 gap-2 bg-muted/40 p-2.5 px-3 sm:px-4 rounded-xl border border-border w-full sm:w-auto text-center sm:text-right">
+          <div>
+            <span className="text-[10px] text-muted-foreground uppercase font-semibold block truncate">Linked Qs</span>
+            <span className="text-xs sm:text-sm font-bold font-mono">{linked.length} Qs</span>
           </div>
-          <div className="h-7 w-px bg-border" />
-          <div className="text-right">
-            <span className="text-[10px] text-muted-foreground uppercase font-semibold block">Total Marks</span>
-            <span className="text-sm font-bold font-mono text-emerald-600 dark:text-emerald-400">
-              {test.totalMarks} Marks
+          <div className="border-x border-border px-1 sm:px-2">
+            <span className="text-[10px] text-muted-foreground uppercase font-semibold block truncate">Total Marks</span>
+            <span className="text-xs sm:text-sm font-bold font-mono text-emerald-600 dark:text-emerald-400">
+              {test.totalMarks}
             </span>
           </div>
-          <div className="h-7 w-px bg-border" />
-          <div className="text-right">
-            <span className="text-[10px] text-muted-foreground uppercase font-semibold block">Per Question</span>
-            <span className="text-sm font-bold font-mono">+{test.marksPerQuestion} / -{test.negativeMarkingRate}</span>
+          <div>
+            <span className="text-[10px] text-muted-foreground uppercase font-semibold block truncate">Per Q</span>
+            <span className="text-xs sm:text-sm font-bold font-mono">+{test.marksPerQuestion}/-{test.negativeMarkingRate}</span>
           </div>
         </div>
       </div>
 
       {/* Main Tabs: Linked Questions vs Add from Bank */}
       <Tabs defaultValue="linked" className="w-full">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-3">
-          <TabsList className="bg-muted/60 border border-border">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-border pb-3">
+          <TabsList className="bg-muted/60 border border-border w-full sm:w-auto grid grid-cols-2">
             <TabsTrigger value="linked" className="text-xs font-semibold gap-1.5">
               <Layers className="h-3.5 w-3.5" />
-              Linked Questions ({linked.length})
+              Linked ({linked.length})
             </TabsTrigger>
             <TabsTrigger value="add" className="text-xs font-semibold gap-1.5">
               <Plus className="h-3.5 w-3.5" />
-              Add From Question Bank ({available.length})
+              Add Bank ({available.length})
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex items-center gap-2">
-            <Link href={`/admin/tests/${testId}/edit`}>
-              <Button variant="outline" size="sm" className="h-8 text-xs">
-                Edit Test Settings
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <Link href={`/admin/tests/${testId}/edit`} className="flex-1 sm:flex-none">
+              <Button variant="outline" size="sm" className="h-8 text-xs w-full sm:w-auto">
+                Edit Settings
               </Button>
             </Link>
-            <Link href={`/student/tests/${testId}/instructions`} target="_blank">
-              <Button size="sm" className="h-8 text-xs font-semibold gap-1">
+            <Link href={`/student/tests/${testId}/instructions`} target="_blank" className="flex-1 sm:flex-none">
+              <Button size="sm" className="h-8 text-xs font-semibold gap-1 w-full sm:w-auto">
                 <BookOpen className="h-3.5 w-3.5" />
-                Preview in CBT
+                Preview CBT
               </Button>
             </Link>
           </div>
@@ -293,7 +291,7 @@ export function TestQuestionManager({ testId, initialData }: TestQuestionManager
                   </CardDescription>
                 </div>
                 <Badge variant="outline" className="text-xs font-mono font-bold">
-                  {linked.length} Questions Attached
+                  {linked.length} Attached
                 </Badge>
               </div>
             </CardHeader>
@@ -308,40 +306,97 @@ export function TestQuestionManager({ testId, initialData }: TestQuestionManager
                   </p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="border-b border-border bg-muted/30 text-muted-foreground uppercase font-semibold">
-                        <th className="py-3 px-4 w-12 text-center">#</th>
-                        <th className="py-3 px-6">Question Text</th>
-                        <th className="py-3 px-4">Section Name</th>
-                        <th className="py-3 px-4">Subject & Topic</th>
-                        <th className="py-3 px-4">Difficulty</th>
-                        <th className="py-3 px-4">Marks</th>
-                        <th className="py-3 px-6 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {linked.map((item, idx) => {
-                        const q = item.question || {};
-                        return (
-                          <tr key={item.id || item.questionId} className="hover:bg-muted/20 transition-colors">
-                            <td className="py-3.5 px-4 text-center font-mono font-bold text-muted-foreground">
-                              {idx + 1}
-                            </td>
-                            <td className="py-3.5 px-6 max-w-md font-medium text-foreground">
-                              <p className="line-clamp-2 leading-relaxed">{q.questionText}</p>
-                            </td>
-                            <td className="py-3.5 px-4 font-medium">
+                <>
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="border-b border-border bg-muted/30 text-muted-foreground uppercase font-semibold">
+                          <th className="py-3 px-4 w-12 text-center">#</th>
+                          <th className="py-3 px-6">Question Text</th>
+                          <th className="py-3 px-4">Section Name</th>
+                          <th className="py-3 px-4">Subject & Topic</th>
+                          <th className="py-3 px-4">Difficulty</th>
+                          <th className="py-3 px-4">Marks</th>
+                          <th className="py-3 px-6 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {linked.map((item, idx) => {
+                          const q = item.question || {};
+                          return (
+                            <tr key={item.id || item.questionId} className="hover:bg-muted/20 transition-colors">
+                              <td className="py-3.5 px-4 text-center font-mono font-bold text-muted-foreground">
+                                {idx + 1}
+                              </td>
+                              <td className="py-3.5 px-6 max-w-md font-medium text-foreground">
+                                <p className="line-clamp-2 leading-relaxed">{q.questionText}</p>
+                              </td>
+                              <td className="py-3.5 px-4 font-medium">
+                                <Badge variant="secondary" className="text-[10px]">
+                                  {item.sectionName || "General Section"}
+                                </Badge>
+                              </td>
+                              <td className="py-3.5 px-4">
+                                <span className="font-semibold text-foreground block">{q.subject}</span>
+                                <span className="text-muted-foreground text-[11px] block">{q.topic || "-"}</span>
+                              </td>
+                              <td className="py-3.5 px-4">
+                                <Badge
+                                  variant="outline"
+                                  className={`text-[10px] font-mono ${
+                                    q.difficulty === "EASY"
+                                      ? "border-emerald-500 text-emerald-600 dark:text-emerald-400"
+                                      : q.difficulty === "HARD"
+                                      ? "border-rose-500 text-rose-600 dark:text-rose-400"
+                                      : "border-amber-500 text-amber-600 dark:text-amber-400"
+                                  }`}
+                                >
+                                  {q.difficulty}
+                                </Badge>
+                              </td>
+                              <td className="py-3.5 px-4 font-mono font-bold text-foreground">
+                                +{test.marksPerQuestion} / -{test.negativeMarkingRate}
+                              </td>
+                              <td className="py-3.5 px-6 text-right">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={unlinkingId === item.questionId}
+                                  onClick={() => handleUnlink(item.questionId)}
+                                  className="h-7 px-2.5 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20 border-border"
+                                >
+                                  {unlinkingId === item.questionId ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <>
+                                      <Trash2 className="h-3 w-3 mr-1" />
+                                      Unlink
+                                    </>
+                                  )}
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile Card List View */}
+                  <div className="md:hidden divide-y divide-border">
+                    {linked.map((item, idx) => {
+                      const q = item.question || {};
+                      return (
+                        <div key={item.id || item.questionId} className="p-4 space-y-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-xs font-bold text-muted-foreground">
+                                #{idx + 1}
+                              </span>
                               <Badge variant="secondary" className="text-[10px]">
                                 {item.sectionName || "General Section"}
                               </Badge>
-                            </td>
-                            <td className="py-3.5 px-4">
-                              <span className="font-semibold text-foreground block">{q.subject}</span>
-                              <span className="text-muted-foreground text-[11px] block">{q.topic || "-"}</span>
-                            </td>
-                            <td className="py-3.5 px-4">
                               <Badge
                                 variant="outline"
                                 className={`text-[10px] font-mono ${
@@ -354,34 +409,44 @@ export function TestQuestionManager({ testId, initialData }: TestQuestionManager
                               >
                                 {q.difficulty}
                               </Badge>
-                            </td>
-                            <td className="py-3.5 px-4 font-mono font-bold text-foreground">
+                            </div>
+                            <span className="font-mono text-xs font-bold text-foreground">
                               +{test.marksPerQuestion} / -{test.negativeMarkingRate}
-                            </td>
-                            <td className="py-3.5 px-6 text-right">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={unlinkingId === item.questionId}
-                                onClick={() => handleUnlink(item.questionId)}
-                                className="h-7 px-2.5 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20 border-border"
-                              >
-                                {unlinkingId === item.questionId ? (
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                ) : (
-                                  <>
-                                    <Trash2 className="h-3 w-3 mr-1" />
-                                    Unlink
-                                  </>
-                                )}
-                              </Button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                            </span>
+                          </div>
+
+                          <p className="text-xs sm:text-sm font-medium text-foreground line-clamp-3 leading-relaxed">
+                            {q.questionText}
+                          </p>
+
+                          <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/50">
+                            <div className="text-[11px] text-muted-foreground truncate max-w-[180px]">
+                              <span className="font-semibold text-foreground">{q.subject}</span>
+                              {q.topic && <span> • {q.topic}</span>}
+                            </div>
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={unlinkingId === item.questionId}
+                              onClick={() => handleUnlink(item.questionId)}
+                              className="h-8 px-3 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/20 border-border"
+                            >
+                              {unlinkingId === item.questionId ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <>
+                                  <Trash2 className="h-3.5 w-3.5 mr-1" />
+                                  Unlink
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
@@ -400,21 +465,21 @@ export function TestQuestionManager({ testId, initialData }: TestQuestionManager
                 </div>
 
                 {/* Linking Actions Bar */}
-                <div className="flex items-center gap-3">
-                  <div className="space-y-0.5">
+                <div className="flex flex-col sm:flex-row sm:items-end gap-2.5 w-full sm:w-auto">
+                  <div className="space-y-1 w-full sm:w-48">
                     <span className="text-[10px] text-muted-foreground uppercase font-semibold block">Target Section</span>
                     <Input
                       value={targetSection}
                       onChange={(e) => setTargetSection(e.target.value)}
                       placeholder="e.g. Quantitative Aptitude"
-                      className="h-8 text-xs w-48"
+                      className="h-9 sm:h-8 text-xs w-full"
                     />
                   </div>
                   <Button
                     size="sm"
                     disabled={selectedQIds.size === 0 || isLinking}
                     onClick={handleLinkQuestions}
-                    className="h-9 px-4 text-xs font-semibold gap-1.5 shadow-sm mt-3.5"
+                    className="h-9 px-4 text-xs font-semibold gap-1.5 shadow-sm w-full sm:w-auto"
                   >
                     {isLinking ? (
                       <>
@@ -440,7 +505,7 @@ export function TestQuestionManager({ testId, initialData }: TestQuestionManager
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search question text or topic..."
-                    className="h-8 pl-8 text-xs"
+                    className="h-9 sm:h-8 pl-8 text-xs"
                   />
                 </div>
 
@@ -449,7 +514,7 @@ export function TestQuestionManager({ testId, initialData }: TestQuestionManager
                   <select
                     value={selectedSubject}
                     onChange={(e) => setSelectedSubject(e.target.value)}
-                    className="w-full h-8 px-2.5 rounded-md border border-input bg-background text-xs font-medium focus:outline-none focus:ring-1 focus:ring-ring"
+                    className="w-full h-9 sm:h-8 px-2.5 rounded-md border border-input bg-background text-xs font-medium focus:outline-none focus:ring-1 focus:ring-ring"
                   >
                     <option value="ALL">All Subjects ({available.length})</option>
                     {subjects.map((sub) => (
@@ -465,7 +530,7 @@ export function TestQuestionManager({ testId, initialData }: TestQuestionManager
                   <select
                     value={selectedDifficulty}
                     onChange={(e) => setSelectedDifficulty(e.target.value)}
-                    className="w-full h-8 px-2.5 rounded-md border border-input bg-background text-xs font-medium focus:outline-none focus:ring-1 focus:ring-ring"
+                    className="w-full h-9 sm:h-8 px-2.5 rounded-md border border-input bg-background text-xs font-medium focus:outline-none focus:ring-1 focus:ring-ring"
                   >
                     <option value="ALL">All Difficulties</option>
                     <option value="EASY">Easy</option>
@@ -482,49 +547,146 @@ export function TestQuestionManager({ testId, initialData }: TestQuestionManager
                   No matching questions found in the Question Bank.
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="border-b border-border bg-muted/30 text-muted-foreground uppercase font-semibold">
-                        <th className="py-3 px-4 w-12 text-center">
-                          <button
-                            type="button"
-                            onClick={toggleSelectAll}
-                            className="text-muted-foreground hover:text-foreground"
-                          >
-                            {selectedQIds.size === filteredAvailable.length && filteredAvailable.length > 0 ? (
-                              <CheckSquare className="h-4 w-4 text-primary" />
-                            ) : (
-                              <Square className="h-4 w-4" />
-                            )}
-                          </button>
-                        </th>
-                        <th className="py-3 px-6">Question Text</th>
-                        <th className="py-3 px-4">Subject & Topic</th>
-                        <th className="py-3 px-4">Type</th>
-                        <th className="py-3 px-4">Difficulty</th>
-                        <th className="py-3 px-4">Options</th>
-                        <th className="py-3 px-6 text-right">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {filteredAvailable.map((q) => {
-                        const isChecked = selectedQIds.has(q.id);
-                        return (
-                          <tr
-                            key={q.id}
-                            onClick={() => toggleSelect(q.id)}
-                            className={`cursor-pointer transition-colors ${
-                              isChecked ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/20"
-                            }`}
-                          >
-                            <td className="py-3.5 px-4 text-center">
+                <>
+                  {/* Mobile Select All Bar */}
+                  <div className="md:hidden flex items-center justify-between p-3 border-b border-border bg-muted/20 text-xs">
+                    <button
+                      type="button"
+                      onClick={toggleSelectAll}
+                      className="flex items-center gap-2 font-medium text-muted-foreground hover:text-foreground"
+                    >
+                      {selectedQIds.size === filteredAvailable.length && filteredAvailable.length > 0 ? (
+                        <CheckSquare className="h-4 w-4 text-primary" />
+                      ) : (
+                        <Square className="h-4 w-4" />
+                      )}
+                      <span>Select All ({filteredAvailable.length})</span>
+                    </button>
+                    <span className="text-muted-foreground font-mono text-[11px]">
+                      {selectedQIds.size} chosen
+                    </span>
+                  </div>
+
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="border-b border-border bg-muted/30 text-muted-foreground uppercase font-semibold">
+                          <th className="py-3 px-4 w-12 text-center">
+                            <button
+                              type="button"
+                              onClick={toggleSelectAll}
+                              className="text-muted-foreground hover:text-foreground"
+                            >
+                              {selectedQIds.size === filteredAvailable.length && filteredAvailable.length > 0 ? (
+                                <CheckSquare className="h-4 w-4 text-primary" />
+                              ) : (
+                                <Square className="h-4 w-4" />
+                              )}
+                            </button>
+                          </th>
+                          <th className="py-3 px-6">Question Text</th>
+                          <th className="py-3 px-4">Subject & Topic</th>
+                          <th className="py-3 px-4">Type</th>
+                          <th className="py-3 px-4">Difficulty</th>
+                          <th className="py-3 px-4">Options</th>
+                          <th className="py-3 px-6 text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {filteredAvailable.map((q) => {
+                          const isChecked = selectedQIds.has(q.id);
+                          return (
+                            <tr
+                              key={q.id}
+                              onClick={() => toggleSelect(q.id)}
+                              className={`cursor-pointer transition-colors ${
+                                isChecked ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/20"
+                              }`}
+                            >
+                              <td className="py-3.5 px-4 text-center">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleSelect(q.id);
+                                  }}
+                                >
+                                  {isChecked ? (
+                                    <CheckSquare className="h-4 w-4 text-primary" />
+                                  ) : (
+                                    <Square className="h-4 w-4 text-muted-foreground" />
+                                  )}
+                                </button>
+                              </td>
+                              <td className="py-3.5 px-6 max-w-md font-medium text-foreground">
+                                <p className="line-clamp-2 leading-relaxed">{q.questionText}</p>
+                              </td>
+                              <td className="py-3.5 px-4">
+                                <span className="font-semibold text-foreground block">{q.subject}</span>
+                                <span className="text-muted-foreground text-[11px] block">{q.topic || "-"}</span>
+                              </td>
+                              <td className="py-3.5 px-4 font-mono text-[10px]">
+                                {q.questionType}
+                              </td>
+                              <td className="py-3.5 px-4">
+                                <Badge
+                                  variant="outline"
+                                  className={`text-[10px] font-mono ${
+                                    q.difficulty === "EASY"
+                                      ? "border-emerald-500 text-emerald-600 dark:text-emerald-400"
+                                      : q.difficulty === "HARD"
+                                      ? "border-rose-500 text-rose-600 dark:text-rose-400"
+                                      : "border-amber-500 text-amber-600 dark:text-amber-400"
+                                  }`}
+                                >
+                                  {q.difficulty}
+                                </Badge>
+                              </td>
+                              <td className="py-3.5 px-4 font-mono text-muted-foreground">
+                                {q.options?.length || 0} Options
+                              </td>
+                              <td className="py-3.5 px-6 text-right">
+                                <Button
+                                  size="sm"
+                                  variant={isChecked ? "secondary" : "outline"}
+                                  className="h-7 text-xs"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleSelect(q.id);
+                                  }}
+                                >
+                                  {isChecked ? "Selected" : "Select"}
+                                </Button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile Card List View */}
+                  <div className="md:hidden divide-y divide-border">
+                    {filteredAvailable.map((q) => {
+                      const isChecked = selectedQIds.has(q.id);
+                      return (
+                        <div
+                          key={q.id}
+                          onClick={() => toggleSelect(q.id)}
+                          className={`p-4 space-y-3 cursor-pointer transition-colors ${
+                            isChecked ? "bg-primary/5" : "hover:bg-muted/10"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
                               <button
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   toggleSelect(q.id);
                                 }}
+                                className="h-6 w-6 flex items-center justify-center -ml-1 text-foreground"
                               >
                                 {isChecked ? (
                                   <CheckSquare className="h-4 w-4 text-primary" />
@@ -532,18 +694,6 @@ export function TestQuestionManager({ testId, initialData }: TestQuestionManager
                                   <Square className="h-4 w-4 text-muted-foreground" />
                                 )}
                               </button>
-                            </td>
-                            <td className="py-3.5 px-6 max-w-md font-medium text-foreground">
-                              <p className="line-clamp-2 leading-relaxed">{q.questionText}</p>
-                            </td>
-                            <td className="py-3.5 px-4">
-                              <span className="font-semibold text-foreground block">{q.subject}</span>
-                              <span className="text-muted-foreground text-[11px] block">{q.topic || "-"}</span>
-                            </td>
-                            <td className="py-3.5 px-4 font-mono text-[10px]">
-                              {q.questionType}
-                            </td>
-                            <td className="py-3.5 px-4">
                               <Badge
                                 variant="outline"
                                 className={`text-[10px] font-mono ${
@@ -556,29 +706,42 @@ export function TestQuestionManager({ testId, initialData }: TestQuestionManager
                               >
                                 {q.difficulty}
                               </Badge>
-                            </td>
-                            <td className="py-3.5 px-4 font-mono text-muted-foreground">
+                              <Badge variant="secondary" className="text-[10px]">
+                                {q.questionType}
+                              </Badge>
+                            </div>
+                            <Badge variant="outline" className="text-[10px] font-mono">
                               {q.options?.length || 0} Options
-                            </td>
-                            <td className="py-3.5 px-6 text-right">
-                              <Button
-                                size="sm"
-                                variant={isChecked ? "secondary" : "outline"}
-                                className="h-7 text-xs"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleSelect(q.id);
-                                }}
-                              >
-                                {isChecked ? "Selected" : "Select"}
-                              </Button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                            </Badge>
+                          </div>
+
+                          <p className="text-xs sm:text-sm font-medium text-foreground line-clamp-3 leading-relaxed">
+                            {q.questionText}
+                          </p>
+
+                          <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/50">
+                            <div className="text-[11px] text-muted-foreground truncate max-w-[180px]">
+                              <span className="font-semibold text-foreground">{q.subject}</span>
+                              {q.topic && <span> • {q.topic}</span>}
+                            </div>
+
+                            <Button
+                              size="sm"
+                              variant={isChecked ? "secondary" : "outline"}
+                              className="h-8 px-3 text-xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleSelect(q.id);
+                              }}
+                            >
+                              {isChecked ? "Selected" : "Select"}
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>

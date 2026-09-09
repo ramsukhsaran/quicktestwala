@@ -208,28 +208,28 @@ export function QuestionBankManager({ initialQuestions, stats }: QuestionBankMan
           )}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3.5">
           {/* Total Bank Card */}
           <Card
             onClick={() => setSelectedSubject("ALL")}
-            className={`p-4 border transition-all cursor-pointer ${
+            className={`p-3 sm:p-4 border transition-all cursor-pointer ${
               selectedSubject === "ALL"
                 ? "border-primary ring-2 ring-primary/20 bg-primary/5"
                 : "border-border hover:border-primary/50 hover:bg-muted/30"
             }`}
           >
             <div className="flex items-center justify-between">
-              <div className="rounded-lg bg-primary/10 p-2 text-primary">
-                <Layers className="h-5 w-5" />
+              <div className="rounded-lg bg-primary/10 p-1.5 sm:p-2 text-primary">
+                <Layers className="h-4 w-4 sm:h-5 sm:w-5" />
               </div>
               <Badge variant="outline" className="text-[10px] font-mono">
                 100%
               </Badge>
             </div>
-            <div className="mt-3">
-              <p className="text-2xl font-black tracking-tight text-foreground">{stats.total}</p>
+            <div className="mt-2 sm:mt-3">
+              <p className="text-xl sm:text-2xl font-black tracking-tight text-foreground">{stats.total}</p>
               <p className="text-xs font-semibold text-foreground mt-0.5">All Questions</p>
-              <p className="text-[11px] text-muted-foreground">Entire Question Bank</p>
+              <p className="text-[10px] sm:text-[11px] text-muted-foreground">Entire Question Bank</p>
             </div>
           </Card>
 
@@ -242,13 +242,13 @@ export function QuestionBankManager({ initialQuestions, stats }: QuestionBankMan
               <Card
                 key={sub.subject}
                 onClick={() => setSelectedSubject(isSelected ? "ALL" : sub.subject)}
-                className={`p-4 border transition-all cursor-pointer ${getSubjectColorClasses(
+                className={`p-3 sm:p-4 border transition-all cursor-pointer ${getSubjectColorClasses(
                   sub.subject,
                   isSelected
                 )}`}
               >
                 <div className="flex items-center justify-between">
-                  <div className="rounded-lg bg-muted/60 p-2">{getSubjectIcon(sub.subject)}</div>
+                  <div className="rounded-lg bg-muted/60 p-1.5 sm:p-2">{getSubjectIcon(sub.subject)}</div>
                   <Badge
                     variant={isSelected ? "default" : "outline"}
                     className="text-[10px] font-mono"
@@ -256,12 +256,12 @@ export function QuestionBankManager({ initialQuestions, stats }: QuestionBankMan
                     {percent}%
                   </Badge>
                 </div>
-                <div className="mt-3">
-                  <p className="text-2xl font-black tracking-tight text-foreground">{sub.count}</p>
+                <div className="mt-2 sm:mt-3">
+                  <p className="text-xl sm:text-2xl font-black tracking-tight text-foreground">{sub.count}</p>
                   <p className="text-xs font-semibold text-foreground mt-0.5 line-clamp-1" title={sub.subject}>
                     {sub.subject}
                   </p>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-[10px] sm:text-[11px] text-muted-foreground">
                     {sub.count === 1 ? "1 question" : `${sub.count} questions`}
                   </p>
                 </div>
@@ -272,16 +272,16 @@ export function QuestionBankManager({ initialQuestions, stats }: QuestionBankMan
       </div>
 
       {/* Filter and Search Bar */}
-      <Card className="border-border p-4 space-y-3">
+      <Card className="border-border p-3 sm:p-4 space-y-3">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           {/* Search Box */}
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 max-w-md w-full">
             <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search question text, topic, explanation..."
-              className="pl-9 h-8 text-xs bg-background"
+              className="pl-9 h-9 sm:h-8 text-xs bg-background w-full"
             />
             {searchQuery && (
               <button
@@ -293,16 +293,16 @@ export function QuestionBankManager({ initialQuestions, stats }: QuestionBankMan
             )}
           </div>
 
-          {/* Filter Pills */}
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Filter Controls */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex items-center gap-2 w-full md:w-auto">
             {/* Subject Selector */}
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Filter className="h-3.5 w-3.5" />
-              <span className="font-semibold text-foreground">Subject:</span>
+              <Filter className="h-3.5 w-3.5 shrink-0" />
+              <span className="font-semibold text-foreground shrink-0">Subject:</span>
               <select
                 value={selectedSubject}
                 onChange={(e) => setSelectedSubject(e.target.value)}
-                className="h-8 rounded-md border border-input bg-background px-2.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-ring"
+                className="h-9 sm:h-8 w-full rounded-md border border-input bg-background px-2 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-ring"
               >
                 <option value="ALL">All Subjects ({stats.total})</option>
                 {stats.subjects.map((s) => (
@@ -315,11 +315,11 @@ export function QuestionBankManager({ initialQuestions, stats }: QuestionBankMan
 
             {/* Difficulty Selector */}
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span className="font-semibold text-foreground">Difficulty:</span>
+              <span className="font-semibold text-foreground shrink-0">Diff:</span>
               <select
                 value={selectedDifficulty}
                 onChange={(e) => setSelectedDifficulty(e.target.value)}
-                className="h-8 rounded-md border border-input bg-background px-2.5 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-ring"
+                className="h-9 sm:h-8 w-full rounded-md border border-input bg-background px-2 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-ring"
               >
                 <option value="ALL">All Difficulties</option>
                 <option value="EASY">Easy</option>
@@ -337,7 +337,7 @@ export function QuestionBankManager({ initialQuestions, stats }: QuestionBankMan
                   setSelectedDifficulty("ALL");
                   setSearchQuery("");
                 }}
-                className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                className="h-8 text-xs text-muted-foreground hover:text-foreground col-span-full lg:col-auto justify-center"
               >
                 Clear Filters
               </Button>
@@ -360,115 +360,201 @@ export function QuestionBankManager({ initialQuestions, stats }: QuestionBankMan
         </div>
       </Card>
 
-      {/* Questions Table */}
+      {/* Questions Table & Mobile Cards */}
       <Card className="border-border">
-        <CardContent className="p-0 overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-border bg-muted/30 text-muted-foreground uppercase font-semibold">
-                <th className="py-3.5 px-4 w-12 text-center">#</th>
-                <th className="py-3.5 px-5">Question Text</th>
-                <th className="py-3.5 px-4">Subject & Topic</th>
-                <th className="py-3.5 px-3">Difficulty</th>
-                <th className="py-3.5 px-3 text-center">Marks</th>
-                <th className="py-3.5 px-4 text-center">Options</th>
-                <th className="py-3.5 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {paginatedQuestions.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="text-center py-10 text-muted-foreground">
-                    <HelpCircle className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
-                    <p className="font-semibold text-foreground">No questions found matching your criteria.</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Try clearing your search query or subject filters.
-                    </p>
-                  </td>
-                </tr>
-              ) : (
-                paginatedQuestions.map((q, idx) => {
+        <CardContent className="p-0">
+          {paginatedQuestions.length === 0 ? (
+            <div className="text-center py-10 px-4 text-muted-foreground">
+              <HelpCircle className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+              <p className="font-semibold text-foreground text-sm">No questions found matching your criteria.</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Try clearing your search query or subject filters.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/30 text-muted-foreground uppercase font-semibold">
+                      <th className="py-3.5 px-4 w-12 text-center">#</th>
+                      <th className="py-3.5 px-5">Question Text</th>
+                      <th className="py-3.5 px-4">Subject & Topic</th>
+                      <th className="py-3.5 px-3">Difficulty</th>
+                      <th className="py-3.5 px-3 text-center">Marks</th>
+                      <th className="py-3.5 px-4 text-center">Options</th>
+                      <th className="py-3.5 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {paginatedQuestions.map((q, idx) => {
+                      const absoluteIndex = (currentPage - 1) * PAGE_SIZE + idx + 1;
+                      return (
+                        <tr key={q.id} className="hover:bg-muted/20 transition-colors">
+                          <td className="py-3.5 px-4 text-center font-mono text-muted-foreground font-semibold">
+                            {absoluteIndex}
+                          </td>
+                          <td className="py-3.5 px-5 max-w-md font-medium text-foreground">
+                            <p className="line-clamp-2 leading-relaxed">{q.questionText}</p>
+                            {q.explanation && (
+                              <p className="text-[11px] text-muted-foreground line-clamp-1 mt-1 italic">
+                                💡 {q.explanation}
+                              </p>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            <span className="font-semibold text-foreground block">{q.subject}</span>
+                            <span className="text-muted-foreground text-[11px] block">{q.topic || "General"}</span>
+                          </td>
+                          <td className="py-3.5 px-3 whitespace-nowrap">
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] font-mono ${
+                                q.difficulty === "EASY"
+                                  ? "border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-50/20"
+                                  : q.difficulty === "HARD"
+                                  ? "border-rose-500 text-rose-600 dark:text-rose-400 bg-rose-50/20"
+                                  : "border-amber-500 text-amber-600 dark:text-amber-400 bg-amber-50/20"
+                              }`}
+                            >
+                              {q.difficulty}
+                            </Badge>
+                          </td>
+                          <td className="py-3.5 px-3 text-center font-mono font-bold whitespace-nowrap text-foreground">
+                            +{q.marks} / -{q.negativeMarks}
+                          </td>
+                          <td className="py-3.5 px-4 text-center font-mono text-muted-foreground whitespace-nowrap">
+                            <Badge variant="secondary" className="text-[10px]">
+                              {q.options?.length || 0} Options
+                            </Badge>
+                          </td>
+                          <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <Button
+                                onClick={() => setPreviewQuestion(q)}
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                                title="View Options & Solution"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                onClick={() => handleDelete(q.id)}
+                                disabled={isDeleting === q.id}
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-rose-500 hover:text-rose-600 hover:bg-rose-50/30"
+                                title="Delete Question"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card List View */}
+              <div className="md:hidden divide-y divide-border">
+                {paginatedQuestions.map((q, idx) => {
                   const absoluteIndex = (currentPage - 1) * PAGE_SIZE + idx + 1;
                   return (
-                    <tr key={q.id} className="hover:bg-muted/20 transition-colors">
-                      <td className="py-3.5 px-4 text-center font-mono text-muted-foreground font-semibold">
-                        {absoluteIndex}
-                      </td>
-                      <td className="py-3.5 px-5 max-w-md font-medium text-foreground">
-                        <p className="line-clamp-2 leading-relaxed">{q.questionText}</p>
+                    <div key={q.id} className="p-4 space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-bold text-muted-foreground">
+                            #{absoluteIndex}
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className={`text-[10px] font-mono ${
+                              q.difficulty === "EASY"
+                                ? "border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-50/20"
+                                : q.difficulty === "HARD"
+                                ? "border-rose-500 text-rose-600 dark:text-rose-400 bg-rose-50/20"
+                                : "border-amber-500 text-amber-600 dark:text-amber-400 bg-amber-50/20"
+                            }`}
+                          >
+                            {q.difficulty}
+                          </Badge>
+                          <Badge variant="secondary" className="text-[10px]">
+                            {q.questionType}
+                          </Badge>
+                        </div>
+                        <span className="font-mono text-xs font-bold text-foreground">
+                          +{q.marks} / -{q.negativeMarks}
+                        </span>
+                      </div>
+
+                      <div>
+                        <p className="text-xs sm:text-sm font-medium text-foreground line-clamp-3 leading-relaxed">
+                          {q.questionText}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-2 text-[11px] text-muted-foreground">
+                          <span className="font-semibold text-foreground">{q.subject}</span>
+                          {q.topic && (
+                            <>
+                              <span>•</span>
+                              <span className="truncate max-w-[180px]">{q.topic}</span>
+                            </>
+                          )}
+                        </div>
                         {q.explanation && (
-                          <p className="text-[11px] text-muted-foreground line-clamp-1 mt-1 italic">
+                          <p className="text-[11px] text-muted-foreground line-clamp-1 mt-1.5 italic">
                             💡 {q.explanation}
                           </p>
                         )}
-                      </td>
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span className="font-semibold text-foreground block">{q.subject}</span>
-                        <span className="text-muted-foreground text-[11px] block">{q.topic || "General"}</span>
-                      </td>
-                      <td className="py-3.5 px-3 whitespace-nowrap">
-                        <Badge
-                          variant="outline"
-                          className={`text-[10px] font-mono ${
-                            q.difficulty === "EASY"
-                              ? "border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-50/20"
-                              : q.difficulty === "HARD"
-                              ? "border-rose-500 text-rose-600 dark:text-rose-400 bg-rose-50/20"
-                              : "border-amber-500 text-amber-600 dark:text-amber-400 bg-amber-50/20"
-                          }`}
-                        >
-                          {q.difficulty}
-                        </Badge>
-                      </td>
-                      <td className="py-3.5 px-3 text-center font-mono font-bold whitespace-nowrap text-foreground">
-                        +{q.marks} / -{q.negativeMarks}
-                      </td>
-                      <td className="py-3.5 px-4 text-center font-mono text-muted-foreground whitespace-nowrap">
-                        <Badge variant="secondary" className="text-[10px]">
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/50">
+                        <Badge variant="outline" className="text-[10px] font-mono">
                           {q.options?.length || 0} Options
                         </Badge>
-                      </td>
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-1.5">
+                        <div className="flex items-center gap-2">
                           <Button
                             onClick={() => setPreviewQuestion(q)}
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                            title="View Options & Solution"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs gap-1.5"
                           >
                             <Eye className="h-3.5 w-3.5" />
+                            View Options
                           </Button>
                           <Button
                             onClick={() => handleDelete(q.id)}
                             disabled={isDeleting === q.id}
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 text-rose-500 hover:text-rose-600 hover:bg-rose-50/30"
+                            className="h-8 w-8 text-rose-500 hover:text-rose-600 hover:bg-rose-50/30"
                             title="Delete Question"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </Button>
                         </div>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   );
-                })
-              )}
-            </tbody>
-          </table>
+                })}
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-border pt-4">
-          <p className="text-xs text-muted-foreground">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-border pt-4">
+          <p className="text-xs text-muted-foreground text-center sm:text-left">
             Showing {(currentPage - 1) * PAGE_SIZE + 1} to{" "}
             {Math.min(currentPage * PAGE_SIZE, filteredQuestions.length)} of {filteredQuestions.length} questions
           </p>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center justify-center gap-1.5">
             <Button
               variant="outline"
               size="sm"
@@ -480,7 +566,7 @@ export function QuestionBankManager({ initialQuestions, stats }: QuestionBankMan
               Previous
             </Button>
 
-            <span className="text-xs font-semibold px-2">
+            <span className="text-xs font-semibold px-2 font-mono">
               {currentPage} / {totalPages}
             </span>
 

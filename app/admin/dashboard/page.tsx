@@ -22,25 +22,25 @@ export default async function AdminDashboardPage() {
   const stats = await getAdminDashboardStats();
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-6 sm:space-y-8 max-w-7xl mx-auto">
       {/* Header with Quick Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-xl border border-border bg-card">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-6 rounded-xl border border-border bg-card">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Executive Dashboard</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Executive Dashboard</h1>
           <p className="text-xs text-muted-foreground mt-1">
             Real-time platform telemetry, subscriber growth, and test terminal throughput.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Link href="/admin/questions/import">
-            <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5 border-border">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+          <Link href="/admin/questions/import" className="w-full sm:w-auto">
+            <Button size="sm" variant="outline" className="w-full sm:w-auto h-9 sm:h-8 text-xs gap-1.5 border-border">
               <UploadCloud className="h-3.5 w-3.5" />
               Bulk Import Questions
             </Button>
           </Link>
-          <Link href="/admin/test-series/create">
-            <Button size="sm" className="h-8 text-xs font-semibold gap-1.5 shadow-sm">
+          <Link href="/admin/test-series/create" className="w-full sm:w-auto">
+            <Button size="sm" className="w-full sm:w-auto h-9 sm:h-8 text-xs font-semibold gap-1.5 shadow-sm">
               <Plus className="h-3.5 w-3.5" />
               Create Test Series
             </Button>

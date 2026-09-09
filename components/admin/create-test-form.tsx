@@ -461,13 +461,13 @@ export function CreateTestForm({ seriesList }: { seriesList: any[] }) {
             />
           </div>
 
-          <div className="pt-4 flex justify-end gap-3 border-t border-border">
-            <Link href="/admin/tests">
-              <Button type="button" variant="outline" className="text-xs">
+          <div className="pt-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 sm:gap-3 border-t border-border">
+            <Link href="/admin/tests" className="w-full sm:w-auto">
+              <Button type="button" variant="outline" className="text-xs w-full sm:w-auto h-9 sm:h-8">
                 Cancel
               </Button>
             </Link>
-            <Button type="submit" disabled={loading} className="text-xs font-semibold">
+            <Button type="submit" disabled={loading} className="text-xs font-semibold w-full sm:w-auto h-9 sm:h-8">
               {loading ? (
                 <>
                   <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />

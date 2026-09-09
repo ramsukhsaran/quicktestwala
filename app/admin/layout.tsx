@@ -3,6 +3,7 @@ import { Logo } from "@/components/brand/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AdminNav } from "@/components/admin/admin-nav";
 import { AdminUserMenu } from "@/components/admin/admin-user-menu";
+import { AdminBottomNav } from "@/components/admin/admin-bottom-nav";
 import { Badge } from "@/components/ui/badge";
 
 export default async function AdminLayout({
@@ -45,8 +46,11 @@ export default async function AdminLayout({
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Top bar for mobile / header */}
         <header className="flex h-14 items-center justify-between border-b border-border px-4 sm:px-6 bg-background/90 backdrop-blur-md">
-          <div className="flex items-center gap-3 md:hidden">
+          <div className="flex items-center gap-2.5 md:hidden">
             <Logo href="/admin/dashboard" />
+            <Badge variant="outline" className="text-[8px] font-mono uppercase bg-muted/60">
+              Admin
+            </Badge>
           </div>
 
           <div className="hidden md:flex items-center gap-2 text-xs font-mono text-muted-foreground">
@@ -62,11 +66,14 @@ export default async function AdminLayout({
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-muted/10">
+        {/* Page Content with bottom padding for mobile bar */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 pb-24 md:pb-8 bg-muted/10">
           {children}
         </main>
       </div>
+
+      {/* Fixed Bottom Navigation Bar for Mobile */}
+      <AdminBottomNav />
     </div>
   );
 }

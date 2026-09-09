@@ -25,7 +25,7 @@ Inspired by the clean, minimal aesthetic of Vercel, QuickTestWala features an au
 ### 1. Install Dependencies
 
 ```bash
-npm install --legacy-peer-deps
+npm install
 ```
 
 ### 2. Configure Environment

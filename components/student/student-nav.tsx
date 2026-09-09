@@ -14,19 +14,20 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+export const STUDENT_NAV_LINKS = [
+  { href: "/student/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/student/test-series", label: "My Test Series", icon: Layers },
+  { href: "/student/tests", label: "Mock Tests", icon: BookOpenCheck },
+  { href: "/student/results", label: "Past Results", icon: BarChart3 },
+  { href: "/student/bookmarks", label: "Bookmarked Questions", icon: Bookmark },
+  { href: "/student/orders", label: "Order Receipts", icon: Receipt },
+  { href: "/student/profile", label: "Profile & Target", icon: User },
+  { href: "/test-series", label: "Marketplace", icon: ShoppingBag, isMarketplace: true },
+];
+
 export function StudentNav() {
   const pathname = usePathname();
-
-  const links = [
-    { href: "/student/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/student/test-series", label: "My Test Series", icon: Layers },
-    { href: "/student/tests", label: "Mock Tests", icon: BookOpenCheck },
-    { href: "/student/results", label: "Past Results", icon: BarChart3 },
-    { href: "/student/bookmarks", label: "Bookmarked Questions", icon: Bookmark },
-    { href: "/student/orders", label: "Order Receipts", icon: Receipt },
-    { href: "/student/profile", label: "Profile & Target", icon: User },
-    { href: "/test-series", label: "Marketplace", icon: ShoppingBag, isMarketplace: true },
-  ];
+  const links = STUDENT_NAV_LINKS;
 
   return (
     <nav className="space-y-1">

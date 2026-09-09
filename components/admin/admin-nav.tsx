@@ -15,20 +15,21 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+export const ADMIN_NAV_LINKS = [
+  { href: "/admin/dashboard", label: "Overview", icon: LayoutDashboard },
+  { href: "/admin/test-series", label: "Test Series", icon: Layers },
+  { href: "/admin/tests", label: "Tests Management", icon: FileCheck2 },
+  { href: "/admin/questions", label: "Question Bank", icon: HelpCircle },
+  { href: "/admin/questions/import", label: "Bulk CSV Import", icon: UploadCloud },
+  { href: "/admin/students", label: "Students", icon: Users },
+  { href: "/admin/orders", label: "Orders & Revenue", icon: CreditCard },
+  { href: "/admin/settings", label: "Settings", icon: Settings },
+  { href: "/student/dashboard", label: "Student View", icon: GraduationCap, isPortalSwitch: true },
+];
+
 export function AdminNav() {
   const pathname = usePathname();
-
-  const links = [
-    { href: "/admin/dashboard", label: "Overview", icon: LayoutDashboard },
-    { href: "/admin/test-series", label: "Test Series", icon: Layers },
-    { href: "/admin/tests", label: "Tests Management", icon: FileCheck2 },
-    { href: "/admin/questions", label: "Question Bank", icon: HelpCircle },
-    { href: "/admin/questions/import", label: "Bulk CSV Import", icon: UploadCloud },
-    { href: "/admin/students", label: "Students", icon: Users },
-    { href: "/admin/orders", label: "Orders & Revenue", icon: CreditCard },
-    { href: "/admin/settings", label: "Settings", icon: Settings },
-    { href: "/student/dashboard", label: "Student View", icon: GraduationCap, isPortalSwitch: true },
-  ];
+  const links = ADMIN_NAV_LINKS;
 
   return (
     <nav className="space-y-1">

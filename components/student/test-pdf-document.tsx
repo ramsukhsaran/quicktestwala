@@ -54,9 +54,13 @@ interface TestPdfDocumentProps {
 }
 
 export function TestPdfDocument({ test, attempt }: TestPdfDocumentProps) {
+  const candidate = attempt?.user || { name: "Enrolled Student", id: "STUDENT" };
   const [showSolutions, setShowSolutions] = React.useState(true);
-  const candidate = attempt?.user || {};
-  const testQuestions: TestQuestion[] = test?.testQuestions || [];
+  // Memoize stable testQuestions array
+  const testQuestions = React.useMemo<TestQuestion[]>(
+    () => (test?.testQuestions as TestQuestion[]) || [],
+    [test?.testQuestions]
+  );
 
   // Hide student portal header, sidebar, and Sign Out button while on the export document screen
   React.useEffect(() => {
@@ -197,76 +201,7 @@ export function TestPdfDocument({ test, attempt }: TestPdfDocumentProps) {
 
   return (
     <div className="min-h-screen bg-slate-100 py-8 px-4 sm:px-6 print:min-h-0 print:bg-white print:p-0 print:m-0 print:w-full print:max-w-none">
-      {/* Explicit Print & Export Mode Style Overrides for Pure A4 White Pages */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        @page {
-          size: A4 portrait;
-          margin: 12mm 10mm 15mm 10mm;
-        }
-        @media print {
-          html,
-          body {
-            background-color: #ffffff !important;
-            background: #ffffff !important;
-            color: #0f172a !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            width: 100% !important;
-          }
-          /* Eliminate all dark background containers and black side bands */
-          [class*="dark"],
-          [class*="bg-slate-950"],
-          [class*="bg-background"],
-          div,
-          main,
-          aside,
-          header,
-          section,
-          article {
-            background-color: transparent !important;
-            box-shadow: none !important;
-          }
-          .bg-white {
-            background-color: #ffffff !important;
-          }
-          .bg-slate-50, .bg-slate-100 {
-            background-color: #f8fafc !important;
-          }
-          .bg-slate-900 {
-            background-color: #0f172a !important;
-            color: #ffffff !important;
-          }
-          .bg-emerald-50, .bg-emerald-50\\/80, .bg-emerald-100 {
-            background-color: #ecfdf5 !important;
-          }
-          .bg-rose-50, .bg-rose-50\\/80, .bg-rose-100 {
-            background-color: #fff1f2 !important;
-          }
-          .bg-blue-50, .bg-blue-50\\/80 {
-            background-color: #eff6ff !important;
-          }
-          .bg-amber-50, .bg-amber-50\\/60, .bg-amber-100 {
-            background-color: #fffbeb !important;
-          }
-          header,
-          aside,
-          nav,
-          [data-radix-popper-content-wrapper],
-          .print\\:hidden {
-            display: none !important;
-          }
-          main {
-            padding: 0 !important;
-            margin: 0 !important;
-            overflow: visible !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            background: #ffffff !important;
-          }
-        }
-      `}} />
+
 
       {/* -------------------------------------------------------------
           TOP FLOATING ACTION BAR (Hidden when printing)

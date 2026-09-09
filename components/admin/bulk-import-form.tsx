@@ -27,101 +27,7 @@ const SAMPLE_CSV = `question,option_a,option_b,option_c,option_d,correct_answer,
 "Who was the first Governor-General of independent India?","Lord Mountbatten","C. Rajagopalachari","Dr. Rajendra Prasad","Lord Wavell","A","Lord Mountbatten served as the first Governor-General from 1947 to 1948.","General Awareness","Modern Indian History","MEDIUM",2.0,0.5
 "Select the correct synonym for 'ABUNDANT'.","Scarce","Plentiful","Meager","Deficient","B","Abundant means existing or available in large quantities; plentiful.","English Comprehension","Vocabulary","EASY",2.0,0.5`;
 
-// Robust RFC 4180 CSV parser supporting quotes, escaped quotes, newlines, and header normalization
-function parseCsvRFC4180(text: string): Record<string, string>[] {
-  if (!text || !text.trim()) return [];
-
-  const rows: string[][] = [];
-  let currentRow: string[] = [];
-  let currentField = "";
-  let insideQuotes = false;
-  let i = 0;
-
-  while (i < text.length) {
-    const char = text[i];
-    const nextChar = text[i + 1];
-
-    if (char === '"') {
-      if (insideQuotes && nextChar === '"') {
-        // Escaped double quotes: "" -> "
-        currentField += '"';
-        i += 2;
-        continue;
-      } else {
-        // Toggle quote state
-        insideQuotes = !insideQuotes;
-        i++;
-        continue;
-      }
-    }
-
-    if (!insideQuotes && (char === "\n" || (char === "\r" && nextChar === "\n"))) {
-      // Line end
-      currentRow.push(currentField.trim());
-      currentField = "";
-      if (currentRow.length > 0 && currentRow.some((v) => v !== "")) {
-        rows.push(currentRow);
-      }
-      currentRow = [];
-      i += char === "\r" ? 2 : 1;
-      continue;
-    }
-
-    if (!insideQuotes && char === "\r") {
-      currentRow.push(currentField.trim());
-      currentField = "";
-      if (currentRow.length > 0 && currentRow.some((v) => v !== "")) {
-        rows.push(currentRow);
-      }
-      currentRow = [];
-      i++;
-      continue;
-    }
-
-    if (!insideQuotes && char === ",") {
-      // Cell delimiter
-      currentRow.push(currentField.trim());
-      currentField = "";
-      i++;
-      continue;
-    }
-
-    currentField += char;
-    i++;
-  }
-
-  // Push trailing field/row if any
-  if (currentField !== "" || currentRow.length > 0) {
-    currentRow.push(currentField.trim());
-    if (currentRow.length > 0 && currentRow.some((v) => v !== "")) {
-      rows.push(currentRow);
-    }
-  }
-
-  if (rows.length < 2) return [];
-
-  // Normalize column header keys (e.g., "Option A" -> "option_a", "Correct Answer" -> "correct_answer")
-  const normalizeHeader = (h: string) =>
-    h
-      .toLowerCase()
-      .trim()
-      .replace(/[\s-]+/g, "_")
-      .replace(/^"|"$/g, "");
-
-  const headers = rows[0].map(normalizeHeader);
-  const result: Record<string, string>[] = [];
-
-  for (let r = 1; r < rows.length; r++) {
-    const row = rows[r];
-    const obj: Record<string, string> = {};
-    headers.forEach((header, idx) => {
-      obj[header] = row[idx] || "";
-    });
-    result.push(obj);
-  }
-
-  return result;
-}
+import { parseCsvRFC4180 } from "@/lib/utils/csv";
 
 export function BulkImportForm() {
   const [csvText, setCsvText] = React.useState(SAMPLE_CSV);
@@ -259,12 +165,12 @@ export function BulkImportForm() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             onClick={handleReset}
             variant="outline"
             size="sm"
-            className="h-8 text-xs gap-1.5 border-border"
+            className="h-8 text-xs gap-1.5 border-border flex-1 sm:flex-none"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             Reset Sample
@@ -273,7 +179,7 @@ export function BulkImportForm() {
             onClick={handleDownloadTemplate}
             variant="outline"
             size="sm"
-            className="h-8 text-xs gap-1.5 border-border"
+            className="h-8 text-xs gap-1.5 border-border flex-1 sm:flex-none"
           >
             <Download className="h-3.5 w-3.5" />
             Download Sample CSV
@@ -430,14 +336,14 @@ export function BulkImportForm() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-muted-foreground text-center sm:text-left">
               {validRows.length} ready to be inserted in an atomic batch.
             </span>
 
             <Button
               onClick={handleImportValid}
               disabled={loading || validRows.length === 0}
-              className="h-9 px-5 text-xs font-semibold gap-1.5 shadow-sm"
+              className="h-9 px-5 text-xs font-semibold gap-1.5 shadow-sm w-full sm:w-auto"
             >
               {loading ? (
                 <>
