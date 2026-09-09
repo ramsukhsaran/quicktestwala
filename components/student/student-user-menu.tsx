@@ -21,7 +21,7 @@ export function StudentUserMenu({
   };
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-3 print:hidden">
       {user.role === "ADMIN" && (
         <Link href="/admin/dashboard">
           <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5 border-border">

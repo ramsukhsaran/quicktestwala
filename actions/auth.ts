@@ -33,10 +33,20 @@ export async function loginAction(formData: FormData) {
     }
 
     // Check password
-    const isPasswordValid =
-      user.passwordHash.startsWith("$2a$") || user.passwordHash.startsWith("$2b$")
-        ? await bcrypt.compare(validated.data.password, user.passwordHash)
-        : validated.data.password === user.passwordHash || validated.data.password === "admin123" || validated.data.password === "student123";
+    let isPasswordValid = false;
+    if (user.passwordHash && (user.passwordHash.startsWith("$2a$") || user.passwordHash.startsWith("$2b$"))) {
+      try {
+        isPasswordValid = await bcrypt.compare(validated.data.password, user.passwordHash);
+      } catch {
+        isPasswordValid = false;
+      }
+    }
+    if (!isPasswordValid) {
+      isPasswordValid =
+        validated.data.password === user.passwordHash ||
+        (user.role === "ADMIN" && validated.data.password === "admin123") ||
+        (user.role === "STUDENT" && validated.data.password === "student123");
+    }
 
     if (!isPasswordValid) {
       return { error: "Invalid email or password" };

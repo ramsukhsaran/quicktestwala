@@ -10,7 +10,7 @@ import {
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 Starting ExamForge database seed...");
+  console.log("🌱 Starting QuickTestWala database seed...");
 
   // 1. Seed Categories
   console.log("-> Seeding categories...");
@@ -208,7 +208,7 @@ async function main() {
     }
   }
 
-  console.log("✅ ExamForge seed completed successfully!");
+  console.log("✅ QuickTestWala seed completed successfully!");
 }
 
 main()

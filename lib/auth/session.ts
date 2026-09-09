@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { signToken, verifyToken, type UserSessionPayload } from "./jwt";
 
-export const SESSION_COOKIE_NAME = "examforge_session";
+export const SESSION_COOKIE_NAME = "quicktestwala_session";
 
 export async function setSessionCookie(payload: UserSessionPayload): Promise<void> {
   const token = await signToken(payload);

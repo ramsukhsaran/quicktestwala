@@ -8,7 +8,11 @@ import {
   createTest,
   updateTest,
   createQuestion,
+  bulkCreateQuestions,
+  deleteQuestion,
   updateUserStatus,
+  linkQuestionsToTest,
+  unlinkQuestionFromTest,
 } from "@/lib/data/store";
 import { csvQuestionImportSchema } from "@/lib/validations/test";
 import { revalidatePath } from "next/cache";
@@ -91,6 +95,9 @@ export async function updateTestAction(formData: FormData) {
     };
 
     const updatedTest = await updateTest(id, data as any);
+    if (!updatedTest) {
+      return { error: "Failed to update test. Record not found or database unavailable." };
+    }
     revalidatePath("/admin/tests");
 
     return { success: true, test: updatedTest };
@@ -150,8 +157,19 @@ export async function bulkImportQuestionsAction(rawRows: any[]) {
   try {
     await requireAdmin();
 
-    let validCount = 0;
     const errors: { row: number; error: string }[] = [];
+    const questionsToCreate: Array<{
+      questionText: string;
+      questionType?: "MCQ" | "MULTIPLE_CORRECT" | "NUMERICAL";
+      subject: string;
+      topic?: string;
+      difficulty?: "EASY" | "MEDIUM" | "HARD";
+      explanation?: string;
+      marks?: number;
+      negativeMarks?: number;
+      correctNumericalAnswer?: string;
+      options?: { optionKey: string; optionText: string; isCorrect: boolean }[];
+    }> = [];
 
     for (let i = 0; i < rawRows.length; i++) {
       const row = rawRows[i];
@@ -175,7 +193,7 @@ export async function bulkImportQuestionsAction(rawRows: any[]) {
         { optionKey: "D", optionText: data.option_d || "", isCorrect: correct === "D" },
       ].filter((o) => o.optionText.trim() !== "");
 
-      await createQuestion({
+      questionsToCreate.push({
         questionText: data.question,
         questionType: options.length > 0 ? "MCQ" : "NUMERICAL",
         subject: data.subject,
@@ -187,16 +205,24 @@ export async function bulkImportQuestionsAction(rawRows: any[]) {
         correctNumericalAnswer: options.length === 0 ? correct : undefined,
         options: options.length > 0 ? options : undefined,
       });
-
-      validCount++;
     }
+
+    if (questionsToCreate.length === 0) {
+      return {
+        error: "No valid questions found to import",
+        errorsCount: errors.length,
+        errors,
+      };
+    }
+
+    const { count } = await bulkCreateQuestions(questionsToCreate);
 
     revalidatePath("/admin/questions");
 
     return {
       success: true,
       totalRows: rawRows.length,
-      importedCount: validCount,
+      importedCount: count,
       errorsCount: errors.length,
       errors,
     };
@@ -215,3 +241,45 @@ export async function toggleStudentStatusAction(userId: string, newStatus: "ACTI
     return { error: err.message || "Failed to update student status" };
   }
 }
+
+export async function linkQuestionsToTestAction(
+  testId: string,
+  questionIds: string[],
+  sectionName = "General Section"
+) {
+  try {
+    await requireAdmin();
+    const res = await linkQuestionsToTest(testId, questionIds, sectionName);
+    revalidatePath(`/admin/tests/${testId}/questions`);
+    revalidatePath(`/admin/tests/${testId}/edit`);
+    revalidatePath("/admin/tests");
+    return { ...res };
+  } catch (err: any) {
+    return { error: err.message || "Failed to link questions to test" };
+  }
+}
+
+export async function unlinkQuestionFromTestAction(testId: string, questionId: string) {
+  try {
+    await requireAdmin();
+    const res = await unlinkQuestionFromTest(testId, questionId);
+    revalidatePath(`/admin/tests/${testId}/questions`);
+    revalidatePath(`/admin/tests/${testId}/edit`);
+    revalidatePath("/admin/tests");
+    return { ...res };
+  } catch (err: any) {
+    return { error: err.message || "Failed to unlink question from test" };
+  }
+}
+
+export async function deleteQuestionAction(questionId: string) {
+  try {
+    await requireAdmin();
+    await deleteQuestion(questionId);
+    revalidatePath("/admin/questions");
+    return { success: true };
+  } catch (err: any) {
+    return { error: err.message || "Failed to delete question" };
+  }
+}
+

@@ -226,7 +226,7 @@ export default async function TestSeriesDetailPage({ params }: PageProps) {
               <div className="p-4 rounded-lg border border-border/70 bg-muted/20 space-y-1">
                 <p className="font-semibold text-foreground">Can I take the tests on my phone or tablet?</p>
                 <p className="text-muted-foreground leading-relaxed">
-                  Yes, ExamForge is engineered to be 100% responsive. You can attempt tests smoothly on desktops, laptops, tablets, or mobile devices.
+                  Yes, QuickTestWala is engineered to be 100% responsive. You can attempt tests smoothly on desktops, laptops, tablets, or mobile devices.
                 </p>
               </div>
               <div className="p-4 rounded-lg border border-border/70 bg-muted/20 space-y-1">

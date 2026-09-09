@@ -9,10 +9,10 @@ export default function AboutPage() {
           Engineering & Mission
         </Badge>
         <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight">
-          About ExamForge
+          About QuickTestWala
         </h1>
         <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
-          ExamForge was built by competitive exam toppers and software engineers who were frustrated with slow, clunky, ad-cluttered coaching portals. We created a developer-grade platform with the fastest CBT test engine in the country.
+          QuickTestWala was built by competitive exam toppers and software engineers who were frustrated with slow, clunky, ad-cluttered coaching portals. We created a developer-grade platform with the fastest CBT test engine in the country.
         </p>
       </div>
 

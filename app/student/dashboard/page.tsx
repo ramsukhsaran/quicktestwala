@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireAuth } from "@/lib/auth/session";
-import { getStudentDashboardStats, getTestSeriesList } from "@/lib/data/store";
+import { getStudentDashboardStats, getTestSeriesList, getUserById } from "@/lib/data/store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
@@ -21,8 +21,11 @@ import { formatSecondsToTime } from "@/lib/utils";
 
 export default async function StudentDashboardPage() {
   const session = await requireAuth();
-  const stats = await getStudentDashboardStats(session.id);
-  const recommendedSeries = await getTestSeriesList({ isFeatured: true });
+  const [stats, recommendedSeries, user] = await Promise.all([
+    getStudentDashboardStats(session.id),
+    getTestSeriesList({ isFeatured: true }),
+    getUserById(session.id),
+  ]);
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
@@ -31,14 +34,14 @@ export default async function StudentDashboardPage() {
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight">
-              Welcome, {session.name}
+              Welcome, {user?.name || session.name}
             </h1>
             <Badge variant="outline" className="text-[10px] uppercase font-mono">
               Aspirant Portal
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground">
-            Target Focus: SSC & Banking Competitive Examinations 2026.
+            Target Focus: {user?.profile?.targetExam || "SSC & Banking Competitive Examinations 2026"}
           </p>
         </div>
 

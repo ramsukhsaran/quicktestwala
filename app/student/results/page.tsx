@@ -4,7 +4,7 @@ import { getStudentDashboardStats } from "@/lib/data/store";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Clock, ArrowRight, BookOpenCheck } from "lucide-react";
+import { Trophy, Clock, ArrowRight, BookOpenCheck, Download } from "lucide-react";
 import { formatSecondsToTime } from "@/lib/utils";
 
 export default async function StudentResultsHistoryPage() {
@@ -62,12 +62,20 @@ export default async function StudentResultsHistoryPage() {
                       {formatSecondsToTime(attempt.timeTakenSeconds)}
                     </td>
                     <td className="py-4 px-6 text-right">
-                      <Link href={`/student/tests/${attempt.testId}/result?attemptId=${attempt.id}`}>
-                        <Button size="sm" variant="outline" className="h-8 text-xs font-semibold gap-1">
-                          View Solution
-                          <ArrowRight className="h-3 w-3" />
-                        </Button>
-                      </Link>
+                      <div className="flex items-center justify-end gap-2">
+                        <Link href={`/student/tests/${attempt.testId}/export`} target="_blank">
+                          <Button size="sm" variant="outline" className="h-8 text-xs font-semibold gap-1" title="Download PDF Question Paper with Solutions">
+                            <Download className="h-3 w-3 text-primary" />
+                            PDF
+                          </Button>
+                        </Link>
+                        <Link href={`/student/tests/${attempt.testId}/result?attemptId=${attempt.id}`}>
+                          <Button size="sm" variant="outline" className="h-8 text-xs font-semibold gap-1">
+                            View Solution
+                            <ArrowRight className="h-3 w-3" />
+                          </Button>
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}

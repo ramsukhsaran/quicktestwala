@@ -17,7 +17,7 @@ export class MockPaymentProvider implements PaymentProvider {
       currency: input.currency || "INR",
       provider: "MOCK",
       meta: {
-        description: "ExamForge Sandbox Test Payment",
+        description: "QuickTestWala Sandbox Test Payment",
       },
     };
   }

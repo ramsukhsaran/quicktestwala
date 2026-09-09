@@ -29,10 +29,10 @@ export function Navbar({ user }: NavbarProps) {
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border/80 bg-background/90 backdrop-blur-md transition-all">
+    <header className="sticky top-0 z-40 w-full border-b border-border/80 bg-background/90 backdrop-blur-md transition-all print:hidden">
       <div className="container mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
         <div className="flex items-center gap-8">
-          <Logo showBadge />
+          <Logo />
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;

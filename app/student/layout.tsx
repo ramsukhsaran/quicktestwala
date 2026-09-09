@@ -13,11 +13,11 @@ export default async function StudentLayout({
   const session = await requireAuth();
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
+    <div className="flex min-h-screen bg-background text-foreground print:block print:bg-white print:text-black print:min-h-0">
       {/* Sidebar for Desktop */}
-      <aside className="hidden md:flex w-64 flex-col border-r border-border bg-card shrink-0 select-none">
+      <aside className="hidden md:flex w-64 flex-col border-r border-border bg-card shrink-0 select-none print:hidden">
         <div className="flex h-14 items-center px-6 border-b border-border">
-          <Logo showBadge href="/student/dashboard" />
+          <Logo href="/student/dashboard" />
         </div>
 
         <div className="flex-1 py-4 px-3 overflow-y-auto">
@@ -39,11 +39,11 @@ export default async function StudentLayout({
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden print:block print:overflow-visible">
         {/* Top bar for mobile / header */}
-        <header className="flex h-14 items-center justify-between border-b border-border px-4 sm:px-6 bg-background/90 backdrop-blur-md">
+        <header className="flex h-14 items-center justify-between border-b border-border px-4 sm:px-6 bg-background/90 backdrop-blur-md print:hidden">
           <div className="flex items-center gap-3 md:hidden">
-            <Logo showBadge href="/student/dashboard" />
+            <Logo href="/student/dashboard" />
           </div>
 
           <div className="hidden md:flex items-center gap-2 text-xs font-mono text-muted-foreground">
@@ -60,7 +60,7 @@ export default async function StudentLayout({
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-muted/10">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-muted/10 print:p-0 print:m-0 print:overflow-visible print:bg-white">
           {children}
         </main>
       </div>

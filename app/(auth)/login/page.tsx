@@ -76,7 +76,7 @@ export default function LoginPage() {
 
         <Card className="border-border shadow-xl">
           <CardHeader className="space-y-1 text-center p-6 pb-4">
-            <CardTitle className="text-xl font-bold tracking-tight">Sign In to ExamForge</CardTitle>
+            <CardTitle className="text-xl font-bold tracking-tight">Sign In to QuickTestWala</CardTitle>
             <CardDescription className="text-xs text-muted-foreground">
               Enter your credentials to access your mock tests and analytics
             </CardDescription>

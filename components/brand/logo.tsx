@@ -35,10 +35,10 @@ export function Logo({
           <polyline points="2 12 12 17 22 12" />
         </svg>
       </div>
-      <div className="flex items-center gap-1.5">
-        <span className="font-bold tracking-tight text-foreground">Exam</span>
+      <div className="flex items-center gap-1">
+        <span className="font-bold tracking-tight text-foreground">QuickTest</span>
         <span className="font-semibold text-muted-foreground group-hover:text-foreground transition-colors">
-          Forge
+          Wala
         </span>
       </div>
       {showBadge && (

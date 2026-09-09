@@ -1,6 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 
-const secretKey = process.env.AUTH_SECRET || "examforge-fallback-secret-at-least-32-chars-long";
+const secretKey = process.env.AUTH_SECRET || "quicktestwala-fallback-secret-at-least-32-chars-long";
 const key = new TextEncoder().encode(secretKey);
 
 export interface UserSessionPayload {
