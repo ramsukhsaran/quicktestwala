@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ToastProvider } from "@/components/ui/toast";
 import { StoreProvider } from "@/components/providers/store-provider";
@@ -45,6 +46,10 @@ export default function RootLayout({
             <ToastProvider>{children}</ToastProvider>
           </ThemeProvider>
         </StoreProvider>
+        <Script
+          src="https://checkout.razorpay.com/v1/checkout.js"
+          strategy="lazyOnload"
+        />
       </body>
     </html>
   );

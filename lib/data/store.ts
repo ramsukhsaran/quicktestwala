@@ -1,6 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import {
+  AppError,
+  NotFoundError,
+  DatabaseError,
+  ValidationError,
+  ForbiddenError,
+} from "@/lib/errors";
+import {
   INITIAL_USERS,
   INITIAL_CATEGORIES,
   INITIAL_TEST_SERIES,
@@ -775,26 +782,53 @@ export async function updateTest(id: string, data: Partial<DemoTest>) {
 // -------------------------------------------------------------
 // QUESTIONS OPERATIONS
 // -------------------------------------------------------------
-export async function getAllQuestions(filters?: { subject?: string; difficulty?: string }) {
+export async function getAllQuestions(filters?: {
+  subject?: string;
+  difficulty?: string;
+  search?: string;
+}) {
   if (isDbConfigured()) {
     try {
       const where: Record<string, unknown> = {};
       if (filters?.subject) where.subject = filters.subject;
       if (filters?.difficulty) where.difficulty = filters.difficulty;
 
+      if (filters?.search && filters.search.trim()) {
+        const term = filters.search.trim();
+        where.OR = [
+          { questionText: { contains: term, mode: "insensitive" } },
+          { topic: { contains: term, mode: "insensitive" } },
+          { subject: { contains: term, mode: "insensitive" } },
+          { explanation: { contains: term, mode: "insensitive" } },
+          { options: { some: { optionText: { contains: term, mode: "insensitive" } } } },
+        ];
+      }
+
       return await prisma.question.findMany({
         where,
         include: { options: { orderBy: { orderIndex: "asc" } } },
         orderBy: { createdAt: "desc" },
       });
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.error("[getAllQuestions] DB error:", err);
     }
   }
 
   let list = memoryState.questions;
   if (filters?.subject) list = list.filter((q) => q.subject === filters.subject);
   if (filters?.difficulty) list = list.filter((q) => q.difficulty === filters.difficulty);
+  if (filters?.search && filters.search.trim()) {
+    const q = filters.search.toLowerCase().trim();
+    list = list.filter(
+      (item) =>
+        item.questionText.toLowerCase().includes(q) ||
+        (item.topic && item.topic.toLowerCase().includes(q)) ||
+        item.subject.toLowerCase().includes(q) ||
+        (item.explanation && item.explanation.toLowerCase().includes(q)) ||
+        (Array.isArray(item.options) &&
+          item.options.some((opt) => opt.optionText && opt.optionText.toLowerCase().includes(q)))
+    );
+  }
   return list;
 }
 
@@ -859,7 +893,7 @@ export async function deleteQuestion(id: string) {
       });
     } catch (err: any) {
       console.error("[deleteQuestion] Database error:", err);
-      throw new Error(`Database error deleting question: ${err?.message || err}`);
+      throw new DatabaseError(`Database error deleting question: ${err?.message || err}`, err);
     }
   }
 
@@ -881,57 +915,107 @@ export async function createQuestion(data: {
   marks?: number;
   negativeMarks?: number;
   correctNumericalAnswer?: string;
-  options?: { optionKey: string; optionText: string; isCorrect: boolean }[];
+  options?: Array<{ optionKey: string; optionText: string; isCorrect?: boolean }>;
+  correctOptionKeys?: string[] | string;
 }) {
+  const qType = data.questionType || (data.correctNumericalAnswer ? "NUMERICAL" : "MCQ");
+
+  // Determine correct option keys if provided as a separate list or string (e.g. "A, C" or ["A", "B"])
+  let targetCorrectKeys: string[] = [];
+  if (Array.isArray(data.correctOptionKeys)) {
+    targetCorrectKeys = data.correctOptionKeys.map((k) => String(k).trim().toUpperCase());
+  } else if (typeof data.correctOptionKeys === "string" && data.correctOptionKeys.trim()) {
+    targetCorrectKeys = data.correctOptionKeys
+      .split(/[,;\s]+/)
+      .map((k) => k.trim().toUpperCase())
+      .filter(Boolean);
+  }
+
+  // Normalize options with explicit isCorrect determination
+  let mappedOptions = (data.options || []).map((opt, idx) => {
+    const key = opt.optionKey?.toUpperCase().trim() || String.fromCharCode(65 + idx);
+    const isExplicitlyCorrect =
+      targetCorrectKeys.length > 0
+        ? targetCorrectKeys.includes(key)
+        : Boolean(opt.isCorrect);
+
+    return {
+      optionKey: key,
+      optionText: opt.optionText || "",
+      isCorrect: isExplicitlyCorrect,
+      orderIndex: idx,
+    };
+  });
+
+  // If questionType is MCQ and multiple options were flagged correct, retain only the first correct
+  if (qType === "MCQ") {
+    let foundFirst = false;
+    mappedOptions = mappedOptions.map((opt) => {
+      if (opt.isCorrect) {
+        if (!foundFirst) {
+          foundFirst = true;
+          return opt;
+        }
+        return { ...opt, isCorrect: false };
+      }
+      return opt;
+    });
+  }
+
   if (isDbConfigured()) {
     try {
       return await prisma.question.create({
         data: {
           questionText: data.questionText,
-          questionType: data.questionType || "MCQ",
+          questionType: qType,
           subject: data.subject,
           topic: data.topic,
           difficulty: data.difficulty || "MEDIUM",
           explanation: data.explanation,
           marks: Number(data.marks ?? 0),
           negativeMarks: Number(data.negativeMarks ?? 0),
-          correctNumericalAnswer: data.correctNumericalAnswer,
-          options: {
-            create: data.options?.map((opt, idx) => ({
-              optionKey: opt.optionKey,
-              optionText: opt.optionText,
-              isCorrect: opt.isCorrect,
-              orderIndex: idx,
-            })),
-          },
+          correctNumericalAnswer: qType === "NUMERICAL" ? data.correctNumericalAnswer : null,
+          options:
+            qType !== "NUMERICAL" && mappedOptions.length > 0
+              ? {
+                  create: mappedOptions.map((opt) => ({
+                    optionKey: opt.optionKey,
+                    optionText: opt.optionText,
+                    isCorrect: opt.isCorrect,
+                    orderIndex: opt.orderIndex,
+                  })),
+                }
+              : undefined,
         },
         include: { options: true },
       });
     } catch (err: any) {
       console.error("[createQuestion] Database write error:", err);
-      throw new Error(`Database error creating question: ${err?.message || err}`);
+      throw new DatabaseError(`Database error creating question: ${err?.message || err}`, err);
     }
   }
 
   const newQ: DemoQuestion = {
     id: `q_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
     questionText: data.questionText,
-    questionType: data.questionType || "MCQ",
+    questionType: qType,
     subject: data.subject,
     topic: data.topic || "General",
     difficulty: data.difficulty || "MEDIUM",
     explanation: data.explanation || "",
     marks: Number(data.marks ?? 0),
     negativeMarks: Number(data.negativeMarks ?? 0),
-    correctNumericalAnswer: data.correctNumericalAnswer,
+    correctNumericalAnswer: qType === "NUMERICAL" ? data.correctNumericalAnswer : undefined,
     options:
-      data.options?.map((opt, idx) => ({
-        id: `opt_${Date.now()}_${idx}`,
-        optionKey: opt.optionKey,
-        optionText: opt.optionText,
-        isCorrect: opt.isCorrect,
-        orderIndex: idx,
-      })) || [],
+      qType !== "NUMERICAL"
+        ? mappedOptions.map((opt, idx) => ({
+            id: `opt_${Date.now()}_${idx}`,
+            optionKey: opt.optionKey,
+            optionText: opt.optionText,
+            isCorrect: opt.isCorrect,
+            orderIndex: idx,
+          }))
+        : [],
   };
 
   memoryState.questions.push(newQ);
@@ -1625,6 +1709,7 @@ export async function createOrder(data: {
 export async function activateOrder(orderId: string, providerPaymentId: string) {
   if (isDbConfigured()) {
     try {
+      const existing = await prisma.order.findUnique({ where: { id: orderId } });
       const order = await prisma.order.update({
         where: { id: orderId },
         data: {
@@ -1633,7 +1718,7 @@ export async function activateOrder(orderId: string, providerPaymentId: string) 
             create: {
               provider: "RAZORPAY",
               providerPaymentId,
-              amount: 0,
+              amount: existing?.amount ?? 0,
               status: "PAID",
             },
           },

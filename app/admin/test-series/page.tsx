@@ -27,7 +27,8 @@ export default async function AdminTestSeriesPage() {
       </div>
 
       <Card className="border-border">
-        <CardContent className="p-0 overflow-x-auto">
+        {/* Desktop Table View */}
+        <CardContent className="p-0 overflow-x-auto hidden md:block">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-border bg-muted/30 text-muted-foreground uppercase font-semibold">
@@ -94,6 +95,57 @@ export default async function AdminTestSeriesPage() {
             </tbody>
           </table>
         </CardContent>
+
+        {/* Mobile Cards View */}
+        <div className="md:hidden divide-y divide-border">
+          {list.map((ts) => (
+            <div key={ts.id} className="p-4 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <h3 className="font-bold text-sm text-foreground">{ts.title}</h3>
+                  <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
+                    {ts.examName} • {ts.language}
+                  </p>
+                </div>
+                <Badge variant="success" className="text-[10px] shrink-0 font-semibold">
+                  {ts.status}
+                </Badge>
+              </div>
+
+              {/* Specs Grid */}
+              <div className="grid grid-cols-3 gap-2 p-2.5 rounded-lg bg-muted/40 text-xs font-mono">
+                <div>
+                  <span className="text-[10px] text-muted-foreground uppercase block">Price</span>
+                  <span className="font-bold text-foreground">{formatCurrency(ts.discountPrice || ts.price)}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-muted-foreground uppercase block">Content</span>
+                  <span className="font-bold text-foreground">{ts.totalTestsCount} Mocks</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-muted-foreground uppercase block">Rating</span>
+                  <span className="text-amber-500 font-bold">★ {ts.rating.toFixed(1)}</span>
+                </div>
+              </div>
+
+              {/* Mobile Actions Buttons */}
+              <div className="flex items-center gap-2 pt-1">
+                <Link href={`/admin/tests?seriesId=${ts.id}`} className="flex-1">
+                  <Button size="sm" className="w-full h-8 text-xs font-semibold gap-1.5 shadow-sm">
+                    <Layers className="h-3.5 w-3.5" />
+                    Manage Tests
+                  </Button>
+                </Link>
+                <Link href={`/test-series/${ts.slug}`} target="_blank" className="flex-initial">
+                  <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
+                    <Eye className="h-3.5 w-3.5" />
+                    View
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
       </Card>
     </div>
   );

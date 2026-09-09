@@ -17,7 +17,8 @@ export default async function AdminOrdersPage() {
       </div>
 
       <Card className="border-border">
-        <CardContent className="p-0 overflow-x-auto">
+        {/* Desktop Table View */}
+        <CardContent className="p-0 overflow-x-auto hidden md:block">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-border bg-muted/30 text-muted-foreground uppercase font-semibold">
@@ -76,6 +77,54 @@ export default async function AdminOrdersPage() {
             </tbody>
           </table>
         </CardContent>
+
+        {/* Mobile Cards View */}
+        <div className="md:hidden divide-y divide-border">
+          {orders.map((o: any) => (
+            <div key={o.id} className="p-4 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <span className="font-mono font-bold text-sm text-foreground block">{o.orderNumber}</span>
+                  <span className="text-[11px] text-muted-foreground font-mono">
+                    {new Date(o.createdAt).toLocaleDateString("en-IN", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
+                {o.status === "PAID" ? (
+                  <Badge variant="success" className="text-[10px] gap-1 font-semibold shrink-0">
+                    <CheckCircle2 className="h-3 w-3" /> Paid
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-[10px] gap-1 shrink-0">
+                    <Clock className="h-3 w-3" /> {o.status}
+                  </Badge>
+                )}
+              </div>
+
+              <div className="text-xs space-y-0.5">
+                <p className="font-semibold text-foreground">{o.testSeries?.title || "Test Series Package"}</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Purchased by <span className="text-foreground font-medium">{o.user?.name || "Student"}</span> ({o.user?.email})
+                </p>
+              </div>
+
+              {/* Specs Grid */}
+              <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-muted/40 text-xs font-mono">
+                <div>
+                  <span className="text-[10px] text-muted-foreground uppercase block">Amount Paid</span>
+                  <span className="font-bold text-foreground text-sm">{formatCurrency(o.amount)}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-muted-foreground uppercase block">Payment Gateway</span>
+                  <span className="text-muted-foreground font-semibold">{o.paymentMethod || "Razorpay / UPI"}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </Card>
     </div>
   );

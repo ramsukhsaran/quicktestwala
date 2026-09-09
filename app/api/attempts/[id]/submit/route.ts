@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { requireAuth } from "@/lib/auth/session";
 import { submitTestAttempt } from "@/lib/data/store";
 import { apiSuccess, apiError, apiUnauthorized } from "@/lib/api/response";
+import { submitAttemptBodySchema, validateRequestBody } from "@/lib/validations/api";
 
 export async function POST(
   req: NextRequest,
@@ -12,7 +13,8 @@ export async function POST(
     const { id } = await params;
     const body = await req.json().catch(() => ({}));
 
-    const isAutoSubmit = Boolean(body.isAutoSubmit);
+    const validation = validateRequestBody(submitAttemptBodySchema, body);
+    const isAutoSubmit = validation.success ? Boolean(validation.data.isAutoSubmit) : false;
     const result = await submitTestAttempt(id, isAutoSubmit);
 
     return apiSuccess(result, "Test submitted and evaluated successfully");

@@ -12,7 +12,7 @@ import { useToast } from "@/components/ui/toast";
 import { loginAction, demoLoginAction } from "@/actions/auth";
 import { Loader2, Shield, GraduationCap, ArrowRight } from "lucide-react";
 
-export default function LoginPage() {
+function LoginForm() {
   const [loading, setLoading] = React.useState(false);
   const [demoLoading, setDemoLoading] = React.useState<"ADMIN" | "STUDENT" | null>(null);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
@@ -193,5 +193,22 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center p-4 bg-muted/20">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">Loading QuickTestWala...</span>
+          </div>
+        </div>
+      }
+    >
+      <LoginForm />
+    </React.Suspense>
   );
 }

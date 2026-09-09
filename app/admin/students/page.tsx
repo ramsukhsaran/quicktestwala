@@ -17,7 +17,8 @@ export default async function AdminStudentsPage() {
       </div>
 
       <Card className="border-border">
-        <CardContent className="p-0 overflow-x-auto">
+        {/* Desktop Table View */}
+        <CardContent className="p-0 overflow-x-auto hidden md:block">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-border bg-muted/30 text-muted-foreground uppercase font-semibold">
@@ -64,6 +65,54 @@ export default async function AdminStudentsPage() {
             </tbody>
           </table>
         </CardContent>
+
+        {/* Mobile Cards View */}
+        <div className="md:hidden divide-y divide-border">
+          {students.map((st: any) => (
+            <div key={st.id} className="p-4 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <h3 className="font-bold text-sm text-foreground">{st.name}</h3>
+                  <p className="text-[11px] text-muted-foreground font-mono">{st.email}</p>
+                </div>
+                {st.status === "ACTIVE" ? (
+                  <Badge variant="success" className="text-[10px] font-semibold shrink-0">
+                    Active
+                  </Badge>
+                ) : (
+                  <Badge variant="destructive" className="text-[10px] font-semibold shrink-0">
+                    Blocked
+                  </Badge>
+                )}
+              </div>
+
+              <div className="text-xs">
+                <span className="text-muted-foreground">Target Focus: </span>
+                <span className="font-semibold text-foreground">
+                  {st.profile?.targetExam || st.targetExam || "SSC CGL 2026"}
+                </span>
+              </div>
+
+              {/* Specs Grid */}
+              <div className="grid grid-cols-2 gap-2 p-2.5 rounded-lg bg-muted/40 text-xs font-mono">
+                <div>
+                  <span className="text-[10px] text-muted-foreground uppercase block">Subscriptions</span>
+                  <span className="font-bold text-foreground">{st.orders?.length ?? 0} Series</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-muted-foreground uppercase block">Exams Attempted</span>
+                  <span className="font-bold text-foreground">{st.attempts?.length ?? 0} Mocks Taken</span>
+                </div>
+              </div>
+
+              {/* Mobile Status Action */}
+              <div className="flex items-center justify-between pt-1 border-t border-border/60">
+                <span className="text-xs text-muted-foreground">Account Access:</span>
+                <StudentStatusToggle userId={st.id} currentStatus={st.status} />
+              </div>
+            </div>
+          ))}
+        </div>
       </Card>
     </div>
   );

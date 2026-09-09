@@ -30,6 +30,8 @@ export async function GET(
   }
 }
 
+import { linkQuestionsBodySchema, unlinkQuestionBodySchema, validateRequestBody } from "@/lib/validations/api";
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -37,13 +39,14 @@ export async function POST(
   try {
     await requireAdmin();
     const { id } = await params;
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
 
-    const { questionIds, sectionName } = body;
-    if (!questionIds || !Array.isArray(questionIds) || questionIds.length === 0) {
-      return apiError("questionIds array is required and must not be empty");
+    const validation = validateRequestBody(linkQuestionsBodySchema, body);
+    if (!validation.success) {
+      return validation.response;
     }
 
+    const { questionIds, sectionName } = validation.data;
     const result = await linkQuestionsToTest(id, questionIds, sectionName);
     return apiSuccess(result, "Questions linked to mock test successfully");
   } catch (err: any) {
@@ -66,7 +69,10 @@ export async function DELETE(
 
     if (!questionId) {
       const body = await req.json().catch(() => ({}));
-      questionId = body.questionId;
+      const validation = validateRequestBody(unlinkQuestionBodySchema, body);
+      if (validation.success) {
+        questionId = validation.data.questionId;
+      }
     }
 
     if (!questionId) {

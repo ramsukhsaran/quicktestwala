@@ -1,0 +1,113 @@
+/**
+ * Dedicated Print & A4 Export Stylesheet for QuickTestWala™
+ * Standard A4 Geometry, pure-white paper backgrounds, and page break protection.
+ */
+
+@page {
+  size: A4 portrait;
+  margin: 12mm 10mm 15mm 10mm;
+}
+
+@media print {
+  /* Force root and page containers to pure white */
+  html,
+  body {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Eliminate all dark background containers and black side bands */
+  [class*="dark"],
+  [class*="bg-slate-950"],
+  [class*="bg-background"],
+  div,
+  main,
+  aside,
+  header,
+  section,
+  article {
+    background-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  /* Document Content Cards & Highlights */
+  .bg-white {
+    background-color: #ffffff !important;
+  }
+  .bg-slate-50,
+  .bg-slate-100 {
+    background-color: #f8fafc !important;
+  }
+  .bg-slate-900 {
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+  }
+  .bg-emerald-50,
+  .bg-emerald-50\/80,
+  .bg-emerald-100 {
+    background-color: #ecfdf5 !important;
+  }
+  .bg-rose-50,
+  .bg-rose-50\/80,
+  .bg-rose-100 {
+    background-color: #fff1f2 !important;
+  }
+  .bg-blue-50,
+  .bg-blue-50\/80 {
+    background-color: #eff6ff !important;
+  }
+  .bg-amber-50,
+  .bg-amber-50\/60,
+  .bg-amber-100 {
+    background-color: #fffbeb !important;
+  }
+
+  /* Navigation & Chrome Suppression */
+  header,
+  aside,
+  nav,
+  [data-radix-popper-content-wrapper],
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Main wrapper reset */
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    background: #ffffff !important;
+  }
+
+  /* Page break controls */
+  .break-inside-avoid,
+  [style*="page-break-inside: avoid"],
+  [style*="pageBreakInside: avoid"] {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}
+
+/* Dedicated full-screen document mode for PDF export page on screen */
+body.export-pdf-mode {
+  background-color: #f1f5f9 !important;
+}
+
+body.export-pdf-mode aside,
+body.export-pdf-mode header {
+  display: none !important;
+}
+
+body.export-pdf-mode main {
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+}

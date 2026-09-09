@@ -6,14 +6,17 @@ export function Logo({
   className,
   showBadge = false,
   href = "/",
+  onClick,
 }: {
   className?: string;
   showBadge?: boolean;
   href?: string;
+  onClick?: () => void;
 }) {
   return (
     <Link
       href={href}
+      onClick={onClick}
       className={cn(
         "flex items-center gap-2.5 font-semibold text-lg tracking-tight select-none group",
         className

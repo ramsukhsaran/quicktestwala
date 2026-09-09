@@ -4,6 +4,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { StudentNav } from "@/components/student/student-nav";
 import { StudentUserMenu } from "@/components/student/student-user-menu";
+import { StudentBottomNav } from "@/components/student/student-bottom-nav";
 
 export default async function StudentLayout({
   children,
@@ -59,11 +60,14 @@ export default async function StudentLayout({
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-muted/10 print:p-0 print:m-0 print:overflow-visible print:bg-white">
+        {/* Page Content with bottom padding for mobile bar */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 pb-24 md:pb-8 bg-muted/10 print:p-0 print:m-0 print:overflow-visible print:bg-white">
           {children}
         </main>
       </div>
+
+      {/* Mobile Sticky Bottom App Bar */}
+      <StudentBottomNav />
     </div>
   );
 }
