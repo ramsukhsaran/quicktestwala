@@ -1,0 +1,319 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  STUDENT
+}
+
+enum Status {
+  ACTIVE
+  BLOCKED
+}
+
+enum PublishStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum QuestionType {
+  MCQ
+  MULTIPLE_CORRECT
+  NUMERICAL
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum AttemptStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  SUBMITTED
+  AUTO_SUBMITTED
+  EXPIRED
+}
+
+model User {
+  id           String       @id @default(uuid())
+  name         String
+  email        String       @unique
+  passwordHash String       @map("password_hash")
+  role         Role         @default(STUDENT)
+  status       Status       @default(ACTIVE)
+  avatarUrl    String?      @map("avatar_url")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  profile      Profile?
+  orders       Order[]
+  attempts     TestAttempt[]
+  bookmarks    Bookmark[]
+
+  @@index([role])
+  @@index([email])
+  @@map("users")
+}
+
+model Profile {
+  id         String   @id @default(uuid())
+  userId     String   @unique @map("user_id")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phone      String?
+  targetExam String?  @map("target_exam")
+  state      String?
+  education  String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("profiles")
+}
+
+model Category {
+  id           String       @id @default(uuid())
+  name         String
+  slug         String       @unique
+  description  String?
+  icon         String?
+  displayOrder Int          @default(0) @map("display_order")
+  isActive     Boolean      @default(true) @map("is_active")
+  createdAt    DateTime     @default(now()) @map("created_at")
+
+  testSeries   TestSeries[]
+
+  @@map("categories")
+}
+
+model TestSeries {
+  id                  String        @id @default(uuid())
+  title               String
+  slug                String        @unique
+  description         String
+  shortDescription    String?       @map("short_description")
+  thumbnail           String?
+  categoryId          String?       @map("category_id")
+  category            Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  examName            String        @map("exam_name")
+  language            String        @default("Bilingual (Hindi + English)")
+  difficulty          Difficulty    @default(MEDIUM)
+  price               Int           @default(0) // In INR Rupees
+  discountPrice       Int?          @default(0) @map("discount_price")
+  status              PublishStatus @default(PUBLISHED)
+  isFeatured          Boolean       @default(false) @map("is_featured")
+  totalTestsCount     Int           @default(0) @map("total_tests_count")
+  totalQuestionsCount Int           @default(0) @map("total_questions_count")
+  rating              Float         @default(4.8)
+  ratingCount         Int           @default(120) @map("rating_count")
+  publishedAt         DateTime      @default(now()) @map("published_at")
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
+
+  tests               Test[]
+  orders              Order[]
+
+  @@index([categoryId])
+  @@index([status])
+  @@index([isFeatured])
+  @@map("test_series")
+}
+
+model Test {
+  id                    String        @id @default(uuid())
+  testSeriesId          String        @map("test_series_id")
+  testSeries            TestSeries    @relation(fields: [testSeriesId], references: [id], onDelete: Cascade)
+  title                 String
+  slug                  String
+  description           String?
+  durationMinutes       Int           @default(60) @map("duration_minutes")
+  totalMarks            Float         @default(100) @map("total_marks")
+  passingMarks          Float         @default(40) @map("passing_marks")
+  negativeMarkingRate   Float         @default(0.5) @map("negative_marking_rate")
+  marksPerQuestion      Float         @default(2.0) @map("marks_per_question")
+  instructions          String?
+  status                PublishStatus @default(PUBLISHED)
+  allowRetake           Boolean       @default(true) @map("allow_retake")
+  showResultImmediately Boolean       @default(true) @map("show_result_immediately")
+  shuffleQuestions      Boolean       @default(false) @map("shuffle_questions")
+  shuffleOptions        Boolean       @default(false) @map("shuffle_options")
+  orderIndex            Int           @default(0) @map("order_index")
+  createdAt             DateTime      @default(now()) @map("created_at")
+  updatedAt             DateTime      @updatedAt @map("updated_at")
+
+  testQuestions         TestQuestion[]
+  attempts              TestAttempt[]
+
+  @@index([testSeriesId])
+  @@index([status])
+  @@map("tests")
+}
+
+model Question {
+  id                     String         @id @default(uuid())
+  questionText           String         @map("question_text")
+  questionType           QuestionType   @default(MCQ) @map("question_type")
+  subject                String
+  topic                  String?
+  difficulty             Difficulty     @default(MEDIUM)
+  explanation            String?
+  marks                  Float          @default(2.0)
+  negativeMarks          Float          @default(0.5) @map("negative_marks")
+  imageUrl               String?        @map("image_url")
+  correctNumericalAnswer String?        @map("correct_numerical_answer")
+  status                 String         @default("ACTIVE")
+  createdAt              DateTime       @default(now()) @map("created_at")
+  updatedAt              DateTime       @updatedAt @map("updated_at")
+
+  options                QuestionOption[]
+  testQuestions          TestQuestion[]
+  attemptAnswers         AttemptAnswer[]
+  bookmarks              Bookmark[]
+
+  @@index([subject])
+  @@index([difficulty])
+  @@index([questionType])
+  @@map("questions")
+}
+
+model QuestionOption {
+  id         String   @id @default(uuid())
+  questionId String   @map("question_id")
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  optionKey  String   @map("option_key")
+  optionText String   @map("option_text")
+  isCorrect  Boolean  @default(false) @map("is_correct")
+  orderIndex Int      @default(0) @map("order_index")
+
+  @@index([questionId])
+  @@map("question_options")
+}
+
+model TestQuestion {
+  id          String   @id @default(uuid())
+  testId      String   @map("test_id")
+  test        Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
+  questionId  String   @map("question_id")
+  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  sectionName String   @default("General Section") @map("section_name")
+  orderIndex  Int      @default(0) @map("order_index")
+
+  @@index([testId])
+  @@index([questionId])
+  @@map("test_questions")
+}
+
+model Order {
+  id            String      @id @default(uuid())
+  orderNumber   String      @unique @map("order_number")
+  userId        String      @map("user_id")
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  testSeriesId  String      @map("test_series_id")
+  testSeries    TestSeries  @relation(fields: [testSeriesId], references: [id], onDelete: Cascade)
+  amount        Int
+  currency      String      @default("INR")
+  status        OrderStatus @default(PENDING)
+  paymentMethod String      @default("RAZORPAY") @map("payment_method")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  payments      Payment[]
+
+  @@index([userId])
+  @@index([testSeriesId])
+  @@index([status])
+  @@map("orders")
+}
+
+model Payment {
+  id                String   @id @default(uuid())
+  orderId           String   @map("order_id")
+  order             Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider          String   @default("RAZORPAY")
+  providerPaymentId String?  @unique @map("provider_payment_id")
+  providerOrderId   String?  @map("provider_order_id")
+  signature         String?
+  amount            Int
+  status            String   @default("PAID")
+  payload           String?
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([orderId])
+  @@map("payments")
+}
+
+model TestAttempt {
+  id                    String        @id @default(uuid())
+  userId                String        @map("user_id")
+  user                  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  testId                String        @map("test_id")
+  test                  Test          @relation(fields: [testId], references: [id], onDelete: Cascade)
+  status                AttemptStatus @default(IN_PROGRESS)
+  score                 Float         @default(0)
+  totalMarks            Float         @default(0) @map("total_marks")
+  correctAnswersCount   Int           @default(0) @map("correct_answers_count")
+  incorrectAnswersCount Int           @default(0) @map("incorrect_answers_count")
+  unansweredCount       Int           @default(0) @map("unanswered_count")
+  accuracy              Float         @default(0)
+  percentage            Float         @default(0)
+  timeTakenSeconds      Int           @default(0) @map("time_taken_seconds")
+  remainingTimeSeconds  Int           @default(0) @map("remaining_time_seconds")
+  startedAt             DateTime      @default(now()) @map("started_at")
+  completedAt           DateTime?     @map("completed_at")
+  createdAt             DateTime      @default(now()) @map("created_at")
+  updatedAt             DateTime      @updatedAt @map("updated_at")
+
+  answers               AttemptAnswer[]
+
+  @@index([userId])
+  @@index([testId])
+  @@index([status])
+  @@map("test_attempts")
+}
+
+model AttemptAnswer {
+  id                String      @id @default(uuid())
+  attemptId         String      @map("attempt_id")
+  attempt           TestAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  questionId        String      @map("question_id")
+  question          Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedOptionIds String?     @map("selected_option_ids") // JSON array string e.g. ["opt_1"]
+  numericalAnswer   String?     @map("numerical_answer")
+  isCorrect         Boolean?    @map("is_correct")
+  marksAwarded      Float       @default(0) @map("marks_awarded")
+  timeSpentSeconds  Int         @default(0) @map("time_spent_seconds")
+  isMarkedForReview Boolean     @default(false) @map("is_marked_for_review")
+  isVisited         Boolean     @default(true) @map("is_visited")
+  answeredAt        DateTime    @default(now()) @map("answered_at")
+
+  @@index([attemptId])
+  @@index([questionId])
+  @@map("attempt_answers")
+}
+
+model Bookmark {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionId String   @map("question_id")
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  notes      String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([questionId])
+  @@map("bookmarks")
+}
