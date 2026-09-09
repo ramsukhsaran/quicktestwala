@@ -23,7 +23,7 @@ const ThemeProviderContext = React.createContext<ThemeProviderState>({
 export function ThemeProvider({
   children,
   defaultTheme = "system",
-  storageKey = "examforge-theme",
+  storageKey = "quicktestwala-theme",
 }: ThemeProviderProps) {
   const [theme, setTheme] = React.useState<Theme>(defaultTheme);
 

@@ -91,7 +91,7 @@ export function CBTEngine({ attempt }: { attempt: TestAttempt }) {
   const [currentIdx, setCurrentIdx] = React.useState(0);
 
   // Time state: persist in localStorage to survive refresh & sync with server
-  const storageKey = `examforge_timer_${attempt.id}`;
+  const storageKey = `quicktestwala_timer_${attempt.id}`;
   const [timeLeft, setTimeLeft] = React.useState<number>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem(storageKey);

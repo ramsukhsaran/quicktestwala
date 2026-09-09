@@ -17,7 +17,7 @@ export default async function AdminLayout({
       {/* Sidebar for Desktop */}
       <aside className="hidden md:flex w-64 flex-col border-r border-border bg-card shrink-0 select-none">
         <div className="flex h-14 items-center justify-between px-6 border-b border-border">
-          <Logo showBadge href="/admin/dashboard" />
+          <Logo href="/admin/dashboard" />
           <Badge variant="outline" className="text-[9px] font-mono uppercase bg-muted/60">
             Admin
           </Badge>
@@ -46,7 +46,7 @@ export default async function AdminLayout({
         {/* Top bar for mobile / header */}
         <header className="flex h-14 items-center justify-between border-b border-border px-4 sm:px-6 bg-background/90 backdrop-blur-md">
           <div className="flex items-center gap-3 md:hidden">
-            <Logo showBadge href="/admin/dashboard" />
+            <Logo href="/admin/dashboard" />
           </div>
 
           <div className="hidden md:flex items-center gap-2 text-xs font-mono text-muted-foreground">

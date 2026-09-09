@@ -76,7 +76,7 @@ export function CheckoutButton({
           key: res.keyId,
           amount: res.amount * 100,
           currency: res.currency,
-          name: "ExamForge",
+          name: "QuickTestWala",
           description: "Test Series Purchase",
           order_id: res.paymentOrderId,
           handler: async function (response: any) {

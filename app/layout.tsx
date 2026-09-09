@@ -5,7 +5,7 @@ import { StoreProvider } from "@/components/providers/store-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ExamForge — India's Premier CBT Online Examination Portal",
+  title: "QuickTestWala — India's Premier CBT Online Examination Portal",
   description:
     "Prepare smarter and perform better with developer-grade computer based mock tests for SSC CGL, Banking (IBPS/SBI PO), Railways (RRB NTPC), UPSC Prelims, and State PSCs.",
   keywords: [
@@ -18,9 +18,9 @@ export const metadata: Metadata = {
     "government exam practice test",
     "CBT portal",
   ],
-  authors: [{ name: "ExamForge Engineering" }],
+  authors: [{ name: "QuickTestWala Engineering" }],
   openGraph: {
-    title: "ExamForge — India's Premier CBT Online Examination Portal",
+    title: "QuickTestWala — India's Premier CBT Online Examination Portal",
     description:
       "Practice with realistic TCS-style CBT interface, negative marking, sectional analysis, and detailed step-by-step solutions.",
     type: "website",
@@ -41,7 +41,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans antialiased text-foreground">
         <StoreProvider>
-          <ThemeProvider defaultTheme="system" storageKey="examforge-theme">
+          <ThemeProvider defaultTheme="system" storageKey="quicktestwala-theme">
             <ToastProvider>{children}</ToastProvider>
           </ThemeProvider>
         </StoreProvider>

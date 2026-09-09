@@ -64,6 +64,12 @@ export default async function AdminTestsPage() {
                   </td>
                   <td className="py-4 px-6 text-right">
                     <div className="flex items-center justify-end gap-2">
+                      <Link href={`/admin/tests/${test.id}/questions`}>
+                        <Button variant="secondary" size="sm" className="h-7 text-xs gap-1 font-semibold">
+                          <Layers className="h-3 w-3" />
+                          Manage Questions
+                        </Button>
+                      </Link>
                       <Link href={`/admin/tests/${test.id}/edit`}>
                         <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
                           <PencilLine className="h-3 w-3" />

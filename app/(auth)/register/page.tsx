@@ -35,7 +35,7 @@ export default function RegisterPage() {
 
     toast({
       title: "Account Created",
-      description: "Welcome to ExamForge!",
+      description: "Welcome to QuickTestWala!",
       type: "success",
     });
 
@@ -53,7 +53,7 @@ export default function RegisterPage() {
           <CardHeader className="space-y-1 text-center p-6 pb-4">
             <CardTitle className="text-xl font-bold tracking-tight">Create an Account</CardTitle>
             <CardDescription className="text-xs text-muted-foreground">
-              Begin your competitive exam practice with ExamForge
+              Begin your competitive exam practice with QuickTestWala
             </CardDescription>
           </CardHeader>
 

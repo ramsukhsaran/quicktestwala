@@ -73,7 +73,7 @@ export default async function StudentTestSeriesPage() {
 
               <div className="p-5 pt-3 border-t border-border flex items-center justify-between">
                 <span className="text-xs text-muted-foreground font-mono">
-                  {series.totalTestsCount || 25} Mocks Available
+                  {series.totalTestsCount ?? 0} Mocks Available
                 </span>
                 <Link href={`/student/tests?seriesId=${series.id}`}>
                   <Button size="sm" className="h-8 text-xs font-semibold gap-1">

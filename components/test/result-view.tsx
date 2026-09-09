@@ -18,6 +18,7 @@ import {
   Bookmark,
   ChevronRight,
   ChevronLeft,
+  Download,
 } from "lucide-react";
 import { formatSecondsToTime } from "@/lib/utils";
 
@@ -103,7 +104,13 @@ export function ResultView({ attempt }: ResultViewProps) {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Link href={`/student/tests/${test.id}/export`} target="_blank">
+              <Button variant="outline" size="sm" className="h-9 text-xs gap-1.5 border-border font-semibold shadow-xs">
+                <Download className="h-3.5 w-3.5 text-primary" />
+                Download PDF Paper
+              </Button>
+            </Link>
             <Link href={`/student/tests/${test.id}/instructions`}>
               <Button variant="outline" size="sm" className="h-9 text-xs gap-1.5 border-border">
                 <RotateCcw className="h-3.5 w-3.5" />

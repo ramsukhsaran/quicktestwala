@@ -21,7 +21,7 @@ export function AdminUserMenu({
   };
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-3 print:hidden">
       <Link href="/student/dashboard">
         <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5 border-border">
           <GraduationCap className="h-3.5 w-3.5" />

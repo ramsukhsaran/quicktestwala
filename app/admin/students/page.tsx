@@ -40,10 +40,10 @@ export default async function AdminStudentsPage() {
                     {st.profile?.targetExam || st.targetExam || "SSC CGL 2026"}
                   </td>
                   <td className="py-4 px-4 font-mono font-bold">
-                    {st.orders?.length || 1} Series
+                    {st.orders?.length ?? 0} Series
                   </td>
                   <td className="py-4 px-4 font-mono">
-                    {st.attempts?.length || 2} Mocks Taken
+                    {st.attempts?.length ?? 0} Mocks Taken
                   </td>
                   <td className="py-4 px-4">
                     {st.status === "ACTIVE" ? (

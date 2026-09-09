@@ -1,8 +1,8 @@
-# ExamForge — CBT Government Exam Test-Taking Portal
+# QuickTestWala — CBT Government Exam Test-Taking Portal
 
 > **A modern, developer-grade, production-ready online examination platform for Indian competitive exams (SSC, Banking, Railways, UPSC, State PSC, Defence).**
 
-Inspired by the clean, minimal aesthetic of Vercel, ExamForge features an authentic TCS-patterned Computer-Based Test (CBT) engine, live negative marking, sectional countdown timers, automated answer synchronization, detailed step-by-step solutions, and role-based student and admin portals.
+Inspired by the clean, minimal aesthetic of Vercel, QuickTestWala features an authentic TCS-patterned Computer-Based Test (CBT) engine, live negative marking, sectional countdown timers, automated answer synchronization, detailed step-by-step solutions, and role-based student and admin portals.
 
 ---
 
@@ -34,13 +34,13 @@ Copy `.env.example` to `.env`:
 
 ```env
 DATABASE_URL="postgresql://neondb_owner:...@ep-....neon.tech/neondb?sslmode=require"
-AUTH_SECRET="examforge-super-secure-production-secret-token-32chars"
+AUTH_SECRET="quicktestwala-super-secure-production-secret-token-32chars"
 RAZORPAY_KEY_ID="rzp_test_placeholder_key"
 RAZORPAY_KEY_SECRET="rzp_test_placeholder_secret"
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
 
-> **Note**: If `DATABASE_URL` is left as placeholder or offline, ExamForge automatically activates an in-memory development sandbox so every single route, mock test, and admin feature can be run and tested immediately without any setup hurdles!
+> **Note**: If `DATABASE_URL` is left as placeholder or offline, QuickTestWala automatically activates an in-memory development sandbox so every single route, mock test, and admin feature can be run and tested immediately without any setup hurdles!
 
 ### 3. Generate Prisma Client & Push Schema
 
@@ -121,7 +121,7 @@ For effortless evaluation, 1-click login buttons are available directly on the `
 │   └── layout.tsx        # Root HTML layout with ThemeProvider & ToastProvider
 ├── components/
 │   ├── admin/            # Analytics charts, forms, student status toggles
-│   ├── brand/            # ExamForge logo and badges
+│   ├── brand/            # QuickTestWala logo and badges
 │   ├── student/          # Performance progression charts, student navigation
 │   ├── test/             # CBT Exam Engine, question palette, result reviewer
 │   └── ui/               # Button, Card, Dialog, Badge, Input, Toast, Tabs
@@ -142,4 +142,4 @@ For effortless evaluation, 1-click login buttons are available directly on the `
 
 ## 🛡️ License
 
-Built with precision for competitive examination excellence. © ExamForge Technologies Ltd.
+Built with precision for competitive examination excellence. © QuickTestWala Technologies Ltd.

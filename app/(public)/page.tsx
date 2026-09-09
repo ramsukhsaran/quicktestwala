@@ -411,12 +411,12 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* WHY EXAMFORGE / KEY PILLARS */}
+      {/* WHY QUICKTESTWALA / KEY PILLARS */}
       <section className="py-20 border-b border-border bg-background">
         <div className="container mx-auto max-w-6xl px-4 sm:px-6">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <Badge variant="outline" className="mb-2 uppercase tracking-widest text-[10px]">
-              The ExamForge Standard
+              The QuickTestWala Standard
             </Badge>
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
               Designed for Serious Aspirants

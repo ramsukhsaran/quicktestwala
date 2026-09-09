@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifyToken } from "@/lib/auth/jwt";
 
-export const SESSION_COOKIE_NAME = "examforge_session";
+export const SESSION_COOKIE_NAME = "quicktestwala_session";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

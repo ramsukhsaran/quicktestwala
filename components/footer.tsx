@@ -3,7 +3,7 @@ import { Logo } from "@/components/brand/logo";
 
 export function Footer() {
   return (
-    <footer className="border-t border-border bg-background py-12 md:py-16 text-sm text-muted-foreground transition-all">
+    <footer className="border-t border-border bg-background py-12 md:py-16 text-sm text-muted-foreground transition-all print:hidden">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
           <div className="col-span-2 space-y-3">
@@ -101,7 +101,7 @@ export function Footer() {
         </div>
 
         <div className="pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-          <p>© {new Date().getFullYear()} ExamForge Technologies Ltd. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} QuickTestWala Technologies Ltd. All rights reserved.</p>
           <p className="flex items-center gap-2">
             <span>Powered by Next.js 16</span>
             <span>•</span>
