@@ -16,6 +16,7 @@ import {
   Zap,
   TrendingUp,
   FileText,
+  Crown,
 } from "lucide-react";
 import { formatSecondsToTime } from "@/lib/utils";
 
@@ -32,13 +33,19 @@ export default async function StudentDashboardPage() {
       {/* Welcome Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-xl border border-border bg-card shadow-sm">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-2xl font-bold tracking-tight">
               Welcome, {user?.name || session.name}
             </h1>
-            <Badge variant="outline" className="text-[10px] uppercase font-mono">
-              Aspirant Portal
-            </Badge>
+            {stats.isProMember ? (
+              <Badge className="bg-purple-600 text-white text-[10px] font-bold gap-1 shadow-sm">
+                <Crown className="h-3 w-3" /> PRO MEMBER (1 Year Access)
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-[10px] uppercase font-mono">
+                Aspirant Portal
+              </Badge>
+            )}
           </div>
           <p className="text-xs text-muted-foreground">
             Target Focus: {user?.profile?.targetExam || "SSC & Banking Competitive Examinations 2026"}
@@ -65,12 +72,12 @@ export default async function StudentDashboardPage() {
         <Card className="p-4 border-border">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-medium text-muted-foreground uppercase">
-              Enrolled Series
+              {stats.isProMember ? "Access Tier" : "Enrolled Series"}
             </span>
             <Layers className="h-4 w-4 text-muted-foreground" />
           </div>
           <p className="text-2xl font-extrabold font-mono text-foreground mt-2">
-            {stats.purchasedSeriesCount}
+            {stats.isProMember ? "ALL PRO" : stats.purchasedSeriesCount}
           </p>
         </Card>
 

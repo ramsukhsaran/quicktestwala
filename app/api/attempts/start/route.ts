@@ -1,8 +1,9 @@
 import { NextRequest } from "next/server";
 import { requireAuth } from "@/lib/auth/session";
 import { getOrCreateTestAttempt } from "@/lib/data/store";
-import { apiSuccess, apiError, apiUnauthorized } from "@/lib/api/response";
+import { apiSuccess, apiError, apiUnauthorized, apiForbidden } from "@/lib/api/response";
 import { startAttemptBodySchema, validateRequestBody } from "@/lib/validations/api";
+import { ForbiddenError } from "@/lib/errors";
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,6 +18,9 @@ export async function POST(req: NextRequest) {
     const attempt = await getOrCreateTestAttempt(session.id, testId);
     return apiSuccess(attempt, "Test attempt initialized successfully", 201);
   } catch (err: any) {
+    if (err instanceof ForbiddenError || err.statusCode === 403 || err.message?.includes("Access Denied")) {
+      return apiForbidden(err.message || "Forbidden: Access to this test is locked");
+    }
     if (err.message?.includes("Unauthorized")) return apiUnauthorized();
     return apiError(err.message || "Failed to start test attempt", 400);
   }

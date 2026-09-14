@@ -21,13 +21,16 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-const SAMPLE_CSV = `question,option_a,option_b,option_c,option_d,correct_answer,explanation,subject,topic,difficulty,marks,negative_marks
-"In a code language, if CAT is 24, what is DOG?","26","27","28","29","A","D(4) + O(15) + G(7) = 26","General Intelligence & Reasoning","Coding & Decoding","EASY",2.0,0.5
-"Find the value of x if 3x + 12 = 45.","9","10","11","12","C","3x = 45 - 12 = 33 => x = 11","Quantitative Aptitude","Algebra","EASY",2.0,0.5
-"Who was the first Governor-General of independent India?","Lord Mountbatten","C. Rajagopalachari","Dr. Rajendra Prasad","Lord Wavell","A","Lord Mountbatten served as the first Governor-General from 1947 to 1948.","General Awareness","Modern Indian History","MEDIUM",2.0,0.5
-"Select the correct synonym for 'ABUNDANT'.","Scarce","Plentiful","Meager","Deficient","B","Abundant means existing or available in large quantities; plentiful.","English Comprehension","Vocabulary","EASY",2.0,0.5`;
-
 import { parseCsvRFC4180 } from "@/lib/utils/csv";
+import { extractQuestionFigureUrl } from "@/lib/utils/figure";
+import { Image as ImageIcon, Info, HelpCircle } from "lucide-react";
+
+const SAMPLE_CSV = `question,option_a,option_b,option_c,option_d,correct_answer,explanation,subject,topic,difficulty,marks,negative_marks,image_url
+"In the given right-angled triangle ABC, if AB = 3 cm and BC = 4 cm, find the length of hypotenuse AC.","4 cm","5 cm","6 cm","7 cm","B","AC = √(3² + 4²) = √25 = 5 cm.","Quantitative Aptitude","Geometry","EASY",2.0,0.5,"https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=600&auto=format&fit=crop&q=80"
+"Study the pattern in the figure and identify which option completes the sequence.","Pattern A","Pattern B","Pattern C","Pattern D","C","Each step rotates 90 degrees clockwise.","General Intelligence & Reasoning","Non-Verbal Reasoning","MEDIUM",2.0,0.5,"https://images.unsplash.com/photo-1509228468518-180dd4864904?w=600&auto=format&fit=crop&q=80"
+"Find the value of x if 3x + 12 = 45.","9","10","11","12","C","3x = 45 - 12 = 33 => x = 11","Quantitative Aptitude","Algebra","EASY",2.0,0.5,""
+"Who was the first Governor-General of independent India?","Lord Mountbatten","C. Rajagopalachari","Dr. Rajendra Prasad","Lord Wavell","A","Lord Mountbatten served as the first Governor-General from 1947 to 1948.","General Awareness","Modern Indian History","MEDIUM",2.0,0.5,""
+"Select the correct synonym for 'ABUNDANT'.","Scarce","Plentiful","Meager","Deficient","B","Abundant means existing or available in large quantities; plentiful.","English Comprehension","Vocabulary","EASY",2.0,0.5,""`;
 
 export function BulkImportForm() {
   const [csvText, setCsvText] = React.useState(SAMPLE_CSV);
@@ -214,6 +217,47 @@ export function BulkImportForm() {
         </Card>
       )}
 
+      {/* Figure / Diagram Question Instructions Guide */}
+      <Card className="border-primary/20 bg-primary/5 p-4 sm:p-5">
+        <div className="flex items-start gap-3">
+          <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0 mt-0.5">
+            <ImageIcon className="h-5 w-5" />
+          </div>
+          <div className="space-y-2 text-xs text-foreground/90">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-sm text-foreground">How to Add Figure & Diagram Questions in CSV</span>
+              <Badge variant="outline" className="text-[10px] font-mono text-primary border-primary/30">
+                Supported
+              </Badge>
+            </div>
+            <p className="text-muted-foreground leading-relaxed">
+              You can attach figures, geometric diagrams, maps, or reasoning flowcharts in your bulk CSV using either of the following methods:
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+              <div className="p-3 rounded-lg border border-border/60 bg-card space-y-1">
+                <span className="font-bold text-foreground flex items-center gap-1.5">
+                  <span className="h-4 w-4 rounded-full bg-primary/20 text-primary text-[10px] flex items-center justify-center font-mono">1</span>
+                  Method A: Dedicated <code className="bg-muted px-1 rounded text-primary font-mono text-[11px]">image_url</code> Column
+                </span>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Add a header column named <strong className="text-foreground">image_url</strong> or <strong className="text-foreground">figure_url</strong>. Provide a hosted HTTPS image URL, relative path (<code className="text-[10px]">/images/...</code>), or base64 data URI.
+                </p>
+              </div>
+
+              <div className="p-3 rounded-lg border border-border/60 bg-card space-y-1">
+                <span className="font-bold text-foreground flex items-center gap-1.5">
+                  <span className="h-4 w-4 rounded-full bg-primary/20 text-primary text-[10px] flex items-center justify-center font-mono">2</span>
+                  Method B: Inline Markdown in <code className="bg-muted px-1 rounded text-primary font-mono text-[11px]">question</code> Text
+                </span>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Embed directly inside question text using standard markdown: <code className="bg-muted px-1 rounded text-[10px] select-all font-mono">![Figure](https://example.com/fig.png)</code> or <code className="bg-muted px-1 rounded text-[10px] select-all font-mono">&lt;img src=&quot;...&quot; /&gt;</code>.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+
       {/* Upload Zone & Preview Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Input & Dropzone */}
@@ -223,7 +267,7 @@ export function BulkImportForm() {
           <div className="rounded-xl border border-dashed border-border bg-muted/20 p-6 text-center hover:bg-muted/40 transition-colors">
             <FileSpreadsheet className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
             <p className="text-xs font-semibold text-foreground">Upload CSV spreadsheet</p>
-            <p className="text-[11px] text-muted-foreground mt-0.5">UTF-8 RFC 4180 standard</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">UTF-8 RFC 4180 standard with Figure support</p>
             <label className="inline-block mt-3 cursor-pointer">
               <span className="inline-flex items-center justify-center rounded-md text-xs font-medium border border-input bg-background shadow-xs hover:bg-accent hover:text-accent-foreground h-7 px-3">
                 Browse File
@@ -293,6 +337,7 @@ export function BulkImportForm() {
                 <tr>
                   <th className="p-2.5">#</th>
                   <th className="p-2.5">Question</th>
+                  <th className="p-2.5">Figure</th>
                   <th className="p-2.5">Subject</th>
                   <th className="p-2.5">Key</th>
                   <th className="p-2.5">Marks</th>
@@ -302,17 +347,36 @@ export function BulkImportForm() {
               <tbody className="divide-y divide-border">
                 {parsedRows.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-6 text-muted-foreground">
+                    <td colSpan={7} className="text-center py-6 text-muted-foreground">
                       No CSV rows found. Paste CSV content or upload a spreadsheet.
                     </td>
                   </tr>
                 ) : (
                   parsedRows.map((r, i) => {
                     const isErr = validationErrors.some((e) => e.row === i + 1);
+                    const figureUrl = extractQuestionFigureUrl(r);
                     return (
                       <tr key={i} className="hover:bg-muted/10">
                         <td className="p-2.5 font-mono">{i + 1}</td>
-                        <td className="p-2.5 max-w-xs truncate font-medium">{r.question || "—"}</td>
+                        <td className="p-2.5 max-w-xs truncate font-medium">
+                          {r.question || "—"}
+                        </td>
+                        <td className="p-2.5 whitespace-nowrap">
+                          {figureUrl ? (
+                            <a
+                              href={figureUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-primary/40 bg-primary/10 text-primary text-[10px] font-mono hover:bg-primary/20"
+                              title={figureUrl}
+                            >
+                              <ImageIcon className="h-3 w-3" />
+                              <span>Figure</span>
+                            </a>
+                          ) : (
+                            <span className="text-muted-foreground font-mono text-[11px]">—</span>
+                          )}
+                        </td>
                         <td className="p-2.5 whitespace-nowrap">{r.subject || "—"}</td>
                         <td className="p-2.5 font-mono font-bold">{r.correct_answer || "—"}</td>
                         <td className="p-2.5 font-mono">+{r.marks || 2} / -{r.negative_marks || 0.5}</td>

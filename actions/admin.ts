@@ -1,20 +1,29 @@
 "use server";
 
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { requireAdmin } from "@/lib/auth/session";
 import {
   createTestSeries,
   updateTestSeries,
+  toggleTestSeriesStatus,
   deleteTestSeries,
   createTest,
   updateTest,
+  toggleTestStatus,
+  deleteTest,
   createQuestion,
   bulkCreateQuestions,
   deleteQuestion,
   updateUserStatus,
   linkQuestionsToTest,
   unlinkQuestionFromTest,
+  markOrderAsPaid,
+  createPreviousYearPaper,
+  deletePreviousYearPaper,
 } from "@/lib/data/store";
 import { csvQuestionImportSchema } from "@/lib/validations/test";
+import { extractQuestionFigureUrl } from "@/lib/utils/figure";
 import { revalidatePath } from "next/cache";
 
 export async function createTestSeriesAction(formData: FormData) {
@@ -40,12 +49,79 @@ export async function createTestSeriesAction(formData: FormData) {
     const newSeries = await createTestSeries(data);
     revalidatePath("/admin/test-series");
     revalidatePath("/test-series");
+    revalidatePath("/student/test-series");
 
     return { success: true, series: newSeries };
   } catch (err: any) {
     return { error: err.message || "Failed to create test series" };
   }
 }
+
+export async function updateTestSeriesAction(formData: FormData) {
+  try {
+    await requireAdmin();
+
+    const id = formData.get("id") as string;
+    if (!id) throw new Error("Test series id is required");
+
+    const data = {
+      title: formData.get("title") as string,
+      slug: (formData.get("slug") as string).toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+      description: formData.get("description") as string,
+      shortDescription: formData.get("shortDescription") as string,
+      thumbnail: (formData.get("thumbnail") as string) || undefined,
+      categoryId: formData.get("categoryId") as string,
+      examName: formData.get("examName") as string,
+      language: (formData.get("language") as string) || "Bilingual (Hindi + English)",
+      difficulty: (formData.get("difficulty") as "EASY" | "MEDIUM" | "HARD") || "MEDIUM",
+      price: parseInt((formData.get("price") as string) || "0", 10),
+      discountPrice: parseInt((formData.get("discountPrice") as string) || "0", 10),
+      status: (formData.get("status") as "DRAFT" | "PUBLISHED" | "ARCHIVED") || "PUBLISHED",
+      isFeatured: formData.get("isFeatured") === "on" || formData.get("isFeatured") === "true",
+    };
+
+    const updated = await updateTestSeries(id, data as any);
+    revalidatePath("/admin/test-series");
+    revalidatePath(`/admin/test-series/${id}/edit`);
+    revalidatePath("/test-series");
+    revalidatePath(`/test-series/${data.slug}`);
+    revalidatePath("/student/test-series");
+
+    return { success: true, series: updated };
+  } catch (err: any) {
+    return { error: err.message || "Failed to update test series" };
+  }
+}
+
+export async function toggleTestSeriesStatusAction(seriesId: string, currentStatus?: string) {
+  try {
+    await requireAdmin();
+    const targetStatus = currentStatus === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
+    const updated = await toggleTestSeriesStatus(seriesId, targetStatus);
+    revalidatePath("/admin/test-series");
+    revalidatePath("/test-series");
+    revalidatePath("/student/test-series");
+    return { success: true, series: updated };
+  } catch (err: any) {
+    return { error: err.message || "Failed to update test series status" };
+  }
+}
+
+export async function deleteTestSeriesAction(seriesId: string) {
+  try {
+    await requireAdmin();
+    await deleteTestSeries(seriesId);
+    revalidatePath("/admin/test-series");
+    revalidatePath("/test-series");
+    revalidatePath("/student/test-series");
+    revalidatePath("/admin/tests");
+    revalidatePath("/student/tests");
+    return { success: true };
+  } catch (err: any) {
+    return { error: err.message || "Failed to delete test series" };
+  }
+}
+
 
 export async function createTestAction(formData: FormData) {
   try {
@@ -119,6 +195,7 @@ export async function createQuestionAction(formData: FormData) {
     const negativeMarks = parseFloat((formData.get("negativeMarks") as string) || "0.5");
     const questionType = (formData.get("questionType") as "MCQ" | "NUMERICAL") || "MCQ";
     const correctNumericalAnswer = formData.get("correctNumericalAnswer") as string;
+    const imageUrl = (formData.get("imageUrl") as string)?.trim() || undefined;
 
     const optA = formData.get("option_A") as string;
     const optB = formData.get("option_B") as string;
@@ -142,6 +219,7 @@ export async function createQuestionAction(formData: FormData) {
       explanation,
       marks,
       negativeMarks,
+      imageUrl,
       correctNumericalAnswer,
       options: questionType === "MCQ" ? options : undefined,
     });
@@ -150,6 +228,97 @@ export async function createQuestionAction(formData: FormData) {
     return { success: true, question: newQuestion };
   } catch (err: any) {
     return { error: err.message || "Failed to create question" };
+  }
+}
+
+export async function createPreviousYearPaperAction(formData: FormData) {
+  try {
+    await requireAdmin();
+
+    const title = (formData.get("title") as string)?.trim();
+    const examName = (formData.get("examName") as string)?.trim();
+    const year = (formData.get("year") as string)?.trim();
+    const description = (formData.get("description") as string)?.trim();
+    const testSeriesId = (formData.get("testSeriesId") as string)?.trim() || null;
+    const rawQuestions = (formData.get("questionsJson") as string)?.trim();
+    const pdfUrlInput = (formData.get("pdfUrl") as string)?.trim();
+    const uploadedPdf = formData.get("pdfFile");
+
+    if (!title || !examName || !year) {
+      return { error: "Title, exam name, and year are required." };
+    }
+
+    let resolvedPdfUrl = pdfUrlInput || "";
+    if (uploadedPdf && typeof uploadedPdf !== "string" && "name" in uploadedPdf && uploadedPdf.size > 0) {
+      const fileName = `${Date.now()}-${String(uploadedPdf.name).replace(/[^a-zA-Z0-9_.-]/g, "_")}`;
+      const uploadDir = path.join(process.cwd(), "public", "uploads", "question-papers");
+      await mkdir(uploadDir, { recursive: true });
+      const destination = path.join(uploadDir, fileName);
+      const buffer = Buffer.from(await uploadedPdf.arrayBuffer());
+      await writeFile(destination, buffer);
+      resolvedPdfUrl = `/uploads/question-papers/${fileName}`;
+    }
+
+    let parsedQuestions: any[] = [];
+    if (rawQuestions) {
+      const candidate = JSON.parse(rawQuestions);
+      parsedQuestions = Array.isArray(candidate) ? candidate : [candidate];
+    }
+
+    if (parsedQuestions.length === 0) {
+      return { error: "Please provide at least one question in the same question format used in the platform." };
+    }
+
+    const rawAccessType = (formData.get("accessType") as string)?.trim();
+    const accessType = (rawAccessType as "FREE" | "PAID_ANY" | "SERIES_SPECIFIC") || (testSeriesId ? "SERIES_SPECIFIC" : "PAID_ANY");
+
+    const paper = await createPreviousYearPaper({
+      title,
+      examName,
+      year,
+      description,
+      testSeriesId,
+      pdfUrl: resolvedPdfUrl,
+      accessType,
+      questions: parsedQuestions.map((q: any) => ({
+        questionText: q.questionText || q.question || "",
+        questionType: q.questionType || (q.correctNumericalAnswer ? "NUMERICAL" : "MCQ"),
+        subject: q.subject || "General",
+        topic: q.topic || "General",
+        difficulty: q.difficulty || "MEDIUM",
+        explanation: q.explanation || "",
+        marks: q.marks ?? 2,
+        negativeMarks: q.negativeMarks ?? 0.5,
+        correctNumericalAnswer: q.correctNumericalAnswer || undefined,
+        options: Array.isArray(q.options)
+          ? q.options.map((opt: any) => ({
+              optionKey: opt.optionKey || opt.key || "",
+              optionText: opt.optionText || opt.text || "",
+              isCorrect: Boolean(opt.isCorrect),
+            }))
+          : undefined,
+        correctOptionKeys: q.correctOptionKeys || undefined,
+      })),
+    });
+
+    revalidatePath("/admin/question-papers");
+    revalidatePath("/student/question-papers");
+    return { success: true, paper };
+  } catch (err: any) {
+    return { error: err.message || "Failed to upload previous year question paper." };
+  }
+}
+
+export async function deletePreviousYearPaperAction(paperId: string) {
+  try {
+    await requireAdmin();
+    if (!paperId) throw new Error("Paper ID is required");
+    await deletePreviousYearPaper(paperId);
+    revalidatePath("/admin/question-papers");
+    revalidatePath("/student/question-papers");
+    return { success: true };
+  } catch (err: any) {
+    return { error: err.message || "Failed to delete previous year paper." };
   }
 }
 
@@ -167,6 +336,7 @@ export async function bulkImportQuestionsAction(rawRows: any[]) {
       explanation?: string;
       marks?: number;
       negativeMarks?: number;
+      imageUrl?: string;
       correctNumericalAnswer?: string;
       options?: { optionKey: string; optionText: string; isCorrect: boolean }[];
     }> = [];
@@ -185,6 +355,7 @@ export async function bulkImportQuestionsAction(rawRows: any[]) {
 
       const data = parsed.data;
       const correct = data.correct_answer.toUpperCase().trim();
+      const figureUrl = extractQuestionFigureUrl(row);
 
       const options = [
         { optionKey: "A", optionText: data.option_a || "", isCorrect: correct === "A" },
@@ -202,6 +373,7 @@ export async function bulkImportQuestionsAction(rawRows: any[]) {
         explanation: data.explanation,
         marks: data.marks,
         negativeMarks: data.negative_marks,
+        imageUrl: figureUrl,
         correctNumericalAnswer: options.length === 0 ? correct : undefined,
         options: options.length > 0 ? options : undefined,
       });
@@ -236,6 +408,8 @@ export async function toggleStudentStatusAction(userId: string, newStatus: "ACTI
     await requireAdmin();
     await updateUserStatus(userId, newStatus);
     revalidatePath("/admin/students");
+    revalidatePath("/student");
+    revalidatePath("/student/dashboard");
     return { success: true };
   } catch (err: any) {
     return { error: err.message || "Failed to update student status" };
@@ -282,4 +456,44 @@ export async function deleteQuestionAction(questionId: string) {
     return { error: err.message || "Failed to delete question" };
   }
 }
+
+export async function toggleTestStatusAction(testId: string, currentStatus?: string) {
+  try {
+    await requireAdmin();
+    const targetStatus = currentStatus === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
+    const updated = await toggleTestStatus(testId, targetStatus);
+    revalidatePath("/admin/tests");
+    revalidatePath("/student/tests");
+    return { success: true, test: updated };
+  } catch (err: any) {
+    return { error: err.message || "Failed to toggle test status" };
+  }
+}
+
+export async function deleteTestAction(testId: string) {
+  try {
+    await requireAdmin();
+    await deleteTest(testId);
+    revalidatePath("/admin/tests");
+    revalidatePath("/student/tests");
+    return { success: true };
+  } catch (err: any) {
+    return { error: err.message || "Failed to delete mock test" };
+  }
+}
+
+export async function markOrderAsPaidAction(orderId: string) {
+  try {
+    await requireAdmin();
+    const updated = await markOrderAsPaid(orderId);
+    revalidatePath("/admin/orders");
+    revalidatePath("/admin/dashboard");
+    revalidatePath("/student/test-series");
+    revalidatePath("/student/tests");
+    return { success: true, order: updated };
+  } catch (err: any) {
+    return { error: err.message || "Failed to mark order as paid" };
+  }
+}
+
 

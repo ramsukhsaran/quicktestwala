@@ -26,7 +26,10 @@ import {
   Layers,
   X,
   Filter,
+  Image as ImageIcon,
 } from "lucide-react";
+import { QuestionFigure } from "@/components/ui/question-figure";
+import { extractQuestionFigureUrl } from "@/lib/utils/figure";
 
 interface QuestionOption {
   id?: string;
@@ -45,6 +48,7 @@ export interface QuestionBankItem {
   difficulty: string;
   marks: number;
   negativeMarks: number;
+  imageUrl?: string | null;
   explanation?: string | null;
   options?: QuestionOption[];
   createdAt?: string | Date;
@@ -396,7 +400,15 @@ export function QuestionBankManager({ initialQuestions, stats }: QuestionBankMan
                             {absoluteIndex}
                           </td>
                           <td className="py-3.5 px-5 max-w-md font-medium text-foreground">
-                            <p className="line-clamp-2 leading-relaxed">{q.questionText}</p>
+                            <div className="flex items-start gap-2">
+                              <p className="line-clamp-2 leading-relaxed flex-1">{q.questionText}</p>
+                              {(q.imageUrl || extractQuestionFigureUrl(q)) && (
+                                <Badge variant="outline" className="text-[10px] shrink-0 gap-1 text-primary border-primary/30 font-mono">
+                                  <ImageIcon className="h-2.5 w-2.5" />
+                                  Figure
+                                </Badge>
+                              )}
+                            </div>
                             {q.explanation && (
                               <p className="text-[11px] text-muted-foreground line-clamp-1 mt-1 italic">
                                 💡 {q.explanation}
@@ -634,6 +646,11 @@ export function QuestionBankManager({ initialQuestions, stats }: QuestionBankMan
                 <div className="p-3.5 rounded-lg bg-muted/40 border border-border text-sm font-medium leading-relaxed">
                   {previewQuestion.questionText}
                 </div>
+                <QuestionFigure
+                  imageUrl={previewQuestion.imageUrl}
+                  questionText={previewQuestion.questionText}
+                  caption="Question Figure"
+                />
               </div>
 
               {/* Options */}

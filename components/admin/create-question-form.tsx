@@ -15,6 +15,7 @@ import Link from "next/link";
 export function CreateQuestionForm() {
   const [loading, setLoading] = React.useState(false);
   const [questionType, setQuestionType] = React.useState<"MCQ" | "NUMERICAL">("MCQ");
+  const [imageUrl, setImageUrl] = React.useState("");
   const router = useRouter();
   const { toast } = useToast();
 
@@ -125,6 +126,42 @@ export function CreateQuestionForm() {
               required
               className="text-sm"
             />
+          </div>
+
+          {/* Optional Figure / Diagram Image */}
+          <div className="space-y-2 p-3.5 rounded-xl border border-border/80 bg-muted/20">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="imageUrl" className="text-xs font-semibold">
+                Figure / Diagram Image URL (Optional)
+              </Label>
+              <span className="text-[10px] text-muted-foreground font-mono">
+                Web URL, /images/... path, or base64 data URI
+              </span>
+            </div>
+            <Input
+              id="imageUrl"
+              name="imageUrl"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              placeholder="e.g. https://example.com/diagram.png or /images/questions/geometry1.svg"
+              className="h-9 text-xs font-mono"
+            />
+            {imageUrl.trim() && (
+              <div className="mt-2 p-2.5 rounded-lg border border-border bg-card">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">
+                  Figure Live Preview:
+                </p>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imageUrl.trim()}
+                  alt="Figure preview"
+                  className="max-h-48 w-auto object-contain rounded mx-auto border border-border bg-muted/10 p-1"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = "none";
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           {questionType === "MCQ" ? (

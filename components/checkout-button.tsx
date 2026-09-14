@@ -171,6 +171,11 @@ export function CheckoutButton({
             <Loader2 className="h-4 w-4 animate-spin" />
             Initializing Payment...
           </>
+        ) : price === 0 ? (
+          <>
+            <CheckCircle2 className="h-4 w-4" />
+            Enroll for Free
+          </>
         ) : (
           <>
             <Lock className="h-4 w-4" />

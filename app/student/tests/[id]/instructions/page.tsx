@@ -1,6 +1,6 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { requireAuth } from "@/lib/auth/session";
-import { getTestById } from "@/lib/data/store";
+import { getTestById, hasStudentAccessToTest } from "@/lib/data/store";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { InstructionsClient } from "@/components/test/instructions-client";
@@ -13,11 +13,17 @@ interface PageProps {
 
 export default async function TestInstructionsPage({ params }: PageProps) {
   const { id } = await params;
-  await requireAuth();
+  const session = await requireAuth();
   const test = await getTestById(id);
 
   if (!test) {
     notFound();
+  }
+
+  const hasAccess = await hasStudentAccessToTest(session.id, test.id);
+  if (!hasAccess) {
+    const slug = (test as any).testSeries?.slug;
+    redirect(slug ? `/test-series/${slug}?locked=true` : `/test-series?locked=true`);
   }
 
   const questionCount = test.testQuestions?.length || 8;

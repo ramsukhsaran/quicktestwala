@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Bookmark, BookOpen, BookOpenCheck } from "lucide-react";
+import { QuestionFigure } from "@/components/ui/question-figure";
 
 export default async function StudentBookmarksPage() {
   const session = await requireAuth();
@@ -63,6 +64,7 @@ export default async function StudentBookmarksPage() {
               </div>
 
               <p className="text-sm font-medium leading-relaxed">{q.questionText}</p>
+              <QuestionFigure imageUrl={(q as any).imageUrl} questionText={q.questionText} />
 
               {q.options && q.options.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">

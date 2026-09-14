@@ -24,9 +24,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (session.status === "BLOCKED") {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("error", "Your account has been suspended.");
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.redirect(new URL("/account-locked", request.url));
   }
 
   // Admin route protection: Students must never be able to access admin routes

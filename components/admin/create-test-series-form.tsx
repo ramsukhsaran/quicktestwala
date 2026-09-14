@@ -135,14 +135,16 @@ export function CreateTestSeriesForm({ categories }: { categories: any[] }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <Label htmlFor="price">Price (₹ INR)</Label>
+              <Label htmlFor="price">
+                Price (₹ INR) <span className="text-muted-foreground font-normal">(0 = Free)</span>
+              </Label>
               <Input
                 id="price"
                 name="price"
                 type="number"
-                defaultValue="499"
+                defaultValue="0"
                 required
                 className="h-10 text-sm"
               />
@@ -154,10 +156,33 @@ export function CreateTestSeriesForm({ categories }: { categories: any[] }) {
                 id="discountPrice"
                 name="discountPrice"
                 type="number"
-                defaultValue="299"
+                defaultValue="0"
                 className="h-10 text-sm"
               />
             </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="status">Publish Status</Label>
+              <select
+                id="status"
+                name="status"
+                defaultValue="PUBLISHED"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+              >
+                <option value="PUBLISHED">Active (Published)</option>
+                <option value="DRAFT">Inactive (Draft)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="shortDescription">Short Summary</Label>
+            <Input
+              id="shortDescription"
+              name="shortDescription"
+              placeholder="1-line summary for student cards..."
+              className="h-10 text-sm"
+            />
           </div>
 
           <div className="space-y-1.5">
@@ -166,7 +191,7 @@ export function CreateTestSeriesForm({ categories }: { categories: any[] }) {
               id="description"
               name="description"
               rows={4}
-              placeholder="Describe the syllabus coverage, number of tests, solution methodology..."
+              placeholder="Describe syllabus coverage, number of tests, solution methodology..."
               required
               className="text-sm"
             />
@@ -182,6 +207,18 @@ export function CreateTestSeriesForm({ categories }: { categories: any[] }) {
             />
           </div>
 
+          <div className="flex items-center gap-2 pt-1">
+            <input
+              type="checkbox"
+              id="isFeatured"
+              name="isFeatured"
+              className="h-4 w-4 rounded border-border text-primary focus:ring-ring"
+            />
+            <Label htmlFor="isFeatured" className="cursor-pointer text-xs font-medium">
+              Feature this test series prominently on the homepage
+            </Label>
+          </div>
+
           <div className="pt-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-2.5 sm:gap-3 border-t border-border">
             <Link href="/admin/test-series" className="w-full sm:w-auto">
               <Button type="button" variant="outline" className="text-xs w-full sm:w-auto h-9 sm:h-8">
@@ -195,10 +232,11 @@ export function CreateTestSeriesForm({ categories }: { categories: any[] }) {
                   Creating...
                 </>
               ) : (
-                "Publish Test Series"
+                "Save & Publish Test Series"
               )}
             </Button>
           </div>
+
         </form>
       </CardContent>
     </Card>

@@ -2,7 +2,7 @@ import { requireAuth } from "@/lib/auth/session";
 import { getUserOrders } from "@/lib/data/store";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Receipt, CheckCircle2, AlertCircle } from "lucide-react";
+import { Receipt, CheckCircle2, AlertCircle, Crown } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 export default async function StudentOrdersPage() {
@@ -29,7 +29,7 @@ export default async function StudentOrdersPage() {
               <thead>
                 <tr className="border-b border-border bg-muted/30 text-muted-foreground uppercase font-semibold">
                   <th className="py-3.5 px-6">Order ID</th>
-                  <th className="py-3.5 px-4">Test Series</th>
+                  <th className="py-3.5 px-4">Package / Membership</th>
                   <th className="py-3.5 px-4">Amount</th>
                   <th className="py-3.5 px-4">Status</th>
                   <th className="py-3.5 px-4">Provider</th>
@@ -43,7 +43,14 @@ export default async function StudentOrdersPage() {
                       {o.orderNumber}
                     </td>
                     <td className="py-4 px-4 font-medium text-foreground">
-                      {o.testSeries?.title || "Test Series Package"}
+                      {o.planType === "PRO_FULL_ACCESS" || o.testSeriesId === "pro_access_all_series" ? (
+                        <span className="inline-flex items-center gap-1.5 font-bold text-purple-600 dark:text-purple-400">
+                          <Crown className="h-3.5 w-3.5" />
+                          Pro Access Membership (1 Year Full Pass)
+                        </span>
+                      ) : (
+                        o.testSeries?.title || "Test Series Package"
+                      )}
                     </td>
                     <td className="py-4 px-4 font-mono font-bold text-foreground">
                       {formatCurrency(o.amount)}

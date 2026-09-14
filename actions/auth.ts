@@ -29,7 +29,11 @@ export async function loginAction(formData: FormData) {
     }
 
     if (user.status === "BLOCKED") {
-      return { error: "Your account has been suspended. Please contact support." };
+      return {
+        error: "Your account is locked. Please contact admin to unlock your account.",
+        isLocked: true,
+        redirectTo: `/account-locked?email=${encodeURIComponent(user.email)}`,
+      };
     }
 
     // Check password
@@ -120,6 +124,14 @@ export async function demoLoginAction(role: "ADMIN" | "STUDENT") {
 
     if (!user) {
       return { error: `Demo user for ${role} not found` };
+    }
+
+    if (user.status === "BLOCKED") {
+      return {
+        error: "Your account is locked. Please contact admin to unlock your account.",
+        isLocked: true,
+        redirectTo: `/account-locked?email=${encodeURIComponent(user.email)}`,
+      };
     }
 
     await setSessionCookie({
