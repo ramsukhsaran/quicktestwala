@@ -6,21 +6,108 @@ import {
   activateOrder,
   hasUserPurchasedSeries,
   getTestSeriesById,
+  hasActiveProAccess,
 } from "@/lib/data/store";
 import { getPaymentProvider } from "@/lib/payments/provider";
 import { MockPaymentProvider } from "@/lib/payments/mock";
 
-export async function createCheckoutOrderAction(testSeriesId: string) {
+export type PurchasePlanType = "SERIES" | "PRO";
+
+export async function createCheckoutOrderAction(
+  input: string | { testSeriesId?: string; planType?: PurchasePlanType; amount?: number }
+) {
   try {
     const user = await requireAuth();
 
-    // Check if already purchased
-    const alreadyPurchased = await hasUserPurchasedSeries(user.id, testSeriesId);
+    const normalized =
+      typeof input === "string"
+        ? { testSeriesId: input, planType: "SERIES" as const }
+        : { testSeriesId: input.testSeriesId, planType: input.planType || "SERIES", amount: input.amount };
+
+    const planType = normalized.planType === "PRO" ? "PRO" : "SERIES";
+
+    if (planType === "PRO") {
+      const alreadyHasPro = await hasActiveProAccess(user.id);
+      if (alreadyHasPro) {
+        return {
+          error: "You already have active Pro access for all test series",
+          alreadyPurchased: true,
+        };
+      }
+
+      const amount = normalized.amount ?? 999;
+      const order = await createOrder({
+        userId: user.id,
+        testSeriesId: "pro_access_all_series",
+        amount,
+        planType: "PRO",
+        accessExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+      });
+
+      if (amount === 0) {
+        await activateOrder(order.id, `pro_free_grant_${Date.now()}`, { planType: "PRO" });
+        return {
+          success: true,
+          orderId: order.id,
+          isFree: true,
+          redirectTo: "/student/test-series",
+        };
+      }
+
+      const provider = getPaymentProvider();
+      let paymentOrder;
+
+      const proNotes: Record<string, string> = { planType: "PRO", orderId: order.id };
+
+      try {
+        paymentOrder = await provider.createOrder({
+          orderNumber: order.orderNumber,
+          amount,
+          currency: "INR",
+          user: { id: user.id, name: user.name, email: user.email },
+          notes: proNotes,
+        });
+      } catch (providerErr: any) {
+        console.warn(
+          "Primary payment provider order creation failed, falling back to Sandbox Simulator:",
+          providerErr?.message || providerErr
+        );
+        const fallbackProvider = new MockPaymentProvider();
+        paymentOrder = await fallbackProvider.createOrder({
+          orderNumber: order.orderNumber,
+          amount,
+          currency: "INR",
+          user: { id: user.id, name: user.name, email: user.email },
+          notes: proNotes,
+        });
+      }
+
+      return {
+        success: true,
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        paymentOrderId: paymentOrder.orderId,
+        amount,
+        currency: "INR",
+        provider: paymentOrder.provider,
+        keyId: paymentOrder.keyId || process.env.RAZORPAY_KEY_ID || "",
+        seriesTitle: "QuickTestWala Pro Access Membership (1 Year)",
+        examName: "All Platform Exams",
+        user: { name: user.name, email: user.email },
+        planType: "PRO",
+      };
+    }
+
+    if (!normalized.testSeriesId) {
+      return { error: "A test series is required for single-series purchase." };
+    }
+
+    const alreadyPurchased = await hasUserPurchasedSeries(user.id, normalized.testSeriesId);
     if (alreadyPurchased) {
       return { error: "You already have active access to this test series", alreadyPurchased: true };
     }
 
-    const series = await getTestSeriesById(testSeriesId);
+    const series = await getTestSeriesById(normalized.testSeriesId);
     if (!series) {
       return { error: "Test series not found" };
     }
@@ -30,16 +117,16 @@ export async function createCheckoutOrderAction(testSeriesId: string) {
         ? series.discountPrice
         : series.price;
 
-    // Create order record in database
     const order = await createOrder({
       userId: user.id,
       testSeriesId: series.id,
       amount: effectivePrice,
+      planType: "SERIES",
+      accessExpiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 180),
     });
 
-    // If free (₹0), activate immediately
     if (effectivePrice === 0) {
-      await activateOrder(order.id, `free_grant_${Date.now()}`);
+      await activateOrder(order.id, `free_grant_${Date.now()}`, { planType: "SERIES" });
       return {
         success: true,
         orderId: order.id,
@@ -48,9 +135,14 @@ export async function createCheckoutOrderAction(testSeriesId: string) {
       };
     }
 
-    // Call payment provider (Razorpay or Sandbox Mock)
     const provider = getPaymentProvider();
     let paymentOrder;
+    const seriesNotes: Record<string, string> = {
+      testSeriesTitle: series.title,
+      orderId: order.id,
+      planType: "SERIES",
+      accessExpiresInDays: "180",
+    };
 
     try {
       paymentOrder = await provider.createOrder({
@@ -62,10 +154,7 @@ export async function createCheckoutOrderAction(testSeriesId: string) {
           name: user.name,
           email: user.email,
         },
-        notes: {
-          testSeriesTitle: series.title,
-          orderId: order.id,
-        },
+        notes: seriesNotes,
       });
     } catch (providerErr: any) {
       console.warn(
@@ -82,10 +171,7 @@ export async function createCheckoutOrderAction(testSeriesId: string) {
           name: user.name,
           email: user.email,
         },
-        notes: {
-          testSeriesTitle: series.title,
-          orderId: order.id,
-        },
+        notes: seriesNotes,
       });
     }
 
@@ -104,6 +190,7 @@ export async function createCheckoutOrderAction(testSeriesId: string) {
         name: user.name,
         email: user.email,
       },
+      planType: "SERIES",
     };
   } catch (err: any) {
     return { error: err.message || "Failed to initiate payment checkout" };
@@ -141,7 +228,6 @@ export async function verifyPaymentAction(data: {
       return { error: verification.message || "Payment verification failed" };
     }
 
-    // Activate the order and grant access
     const updatedOrder = await activateOrder(data.orderId, data.providerPaymentId);
 
     return {

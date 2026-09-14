@@ -67,6 +67,12 @@ export const csvQuestionImportSchema = z.object({
   difficulty: z.enum(["EASY", "MEDIUM", "HARD"]).catch("MEDIUM"),
   marks: z.coerce.number().default(2.0),
   negative_marks: z.coerce.number().default(0.5),
+  image_url: z.string().optional(),
+  figure_url: z.string().optional(),
+  imageurl: z.string().optional(),
+  figure: z.string().optional(),
+  diagram: z.string().optional(),
+  imageUrl: z.string().optional(),
 });
 
 export type TestSeriesInput = z.infer<typeof testSeriesSchema>;

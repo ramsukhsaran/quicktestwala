@@ -33,12 +33,15 @@ export default async function TestSeriesDetailPage({ params }: PageProps) {
   }
 
   const session = await getSession();
-  const isPurchased = session
+  const hasPurchased = session
     ? await hasUserPurchasedSeries(session.id, series.id)
     : false;
 
+  const isFree = series.price === 0 || series.discountPrice === 0;
+  const isAccessible = hasPurchased || isFree;
+
   const effectivePrice =
-    series.discountPrice && series.discountPrice > 0
+    series.discountPrice !== undefined && series.discountPrice !== null
       ? series.discountPrice
       : series.price;
 
@@ -172,7 +175,7 @@ export default async function TestSeriesDetailPage({ params }: PageProps) {
                   </div>
 
                   <div>
-                    {isPurchased ? (
+                    {isAccessible ? (
                       <Link href={`/student/tests/${test.id}/instructions`}>
                         <Button size="sm" className="w-full sm:w-auto h-8 text-xs font-semibold gap-1">
                           Take Test
@@ -253,29 +256,39 @@ export default async function TestSeriesDetailPage({ params }: PageProps) {
                 Full Series Pass
               </span>
               <div className="flex items-baseline gap-2.5">
-                <span className="text-3xl font-extrabold font-mono text-foreground">
-                  {formatCurrency(effectivePrice)}
-                </span>
-                {series.discountPrice && series.discountPrice < series.price && (
-                  <span className="text-sm font-mono text-muted-foreground line-through">
-                    {formatCurrency(series.price)}
+                {isFree ? (
+                  <span className="text-3xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400">
+                    FREE
                   </span>
-                )}
-                {series.discountPrice && series.discountPrice < series.price && (
-                  <Badge variant="success" className="text-[10px]">
-                    Save {Math.round(((series.price - series.discountPrice) / series.price) * 100)}%
-                  </Badge>
+                ) : (
+                  <>
+                    <span className="text-3xl font-extrabold font-mono text-foreground">
+                      {formatCurrency(effectivePrice)}
+                    </span>
+                    {series.discountPrice && series.discountPrice < series.price && (
+                      <span className="text-sm font-mono text-muted-foreground line-through">
+                        {formatCurrency(series.price)}
+                      </span>
+                    )}
+                    {series.discountPrice && series.discountPrice < series.price && (
+                      <Badge variant="success" className="text-[10px]">
+                        Save {Math.round(((series.price - series.discountPrice) / series.price) * 100)}%
+                      </Badge>
+                    )}
+                  </>
                 )}
               </div>
               <p className="text-[11px] text-muted-foreground">
-                One-time payment • No recurring charges • 1 Year Unlimited Access
+                {isFree
+                  ? "Open Practice • No Payment Required • Full Access"
+                  : "One-time payment • No recurring charges • 1 Year Unlimited Access"}
               </p>
             </div>
 
             <CheckoutButton
               testSeriesId={series.id}
               price={effectivePrice}
-              isPurchased={isPurchased}
+              isPurchased={hasPurchased || (isFree && Boolean(session))}
               isLoggedIn={Boolean(session)}
             />
 

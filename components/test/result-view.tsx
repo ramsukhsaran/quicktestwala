@@ -21,6 +21,8 @@ import {
   Download,
 } from "lucide-react";
 import { formatSecondsToTime } from "@/lib/utils";
+import { QuestionFigure } from "@/components/ui/question-figure";
+import { cleanQuestionTextWithFigure } from "@/lib/utils/figure";
 
 interface ResultViewProps {
   attempt: any;
@@ -274,8 +276,15 @@ export function ResultView({ attempt }: ResultViewProps) {
 
                 {/* Question Content */}
                 <div className="text-sm font-medium text-foreground leading-relaxed whitespace-pre-line">
-                  {currentQ.questionText}
+                  {cleanQuestionTextWithFigure(currentQ.questionText) || currentQ.questionText}
                 </div>
+
+                {/* Question Figure / Diagram */}
+                <QuestionFigure
+                  imageUrl={currentQ.imageUrl}
+                  questionText={currentQ.questionText}
+                  caption={`Question ${currentIdx + 1} Figure`}
+                />
 
                 {/* Options List with Color Highlights */}
                 {currentQ.questionType === "NUMERICAL" ? (

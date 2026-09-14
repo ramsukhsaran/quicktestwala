@@ -34,6 +34,7 @@ interface Question {
   difficulty: string;
   marks: number;
   negativeMarks: number;
+  imageUrl?: string | null;
   explanation?: string | null;
   correctNumericalAnswer?: string | null;
   options: Option[];
@@ -593,6 +594,18 @@ export function TestPdfDocument({ test, attempt }: TestPdfDocumentProps) {
                       <div className="text-xs sm:text-sm font-medium text-slate-900 leading-relaxed">
                         {q.questionText}
                       </div>
+
+                      {/* Figure / Diagram */}
+                      {(q.imageUrl || (q as any).image_url) && (
+                        <div className="my-2 p-1.5 border border-slate-200 rounded-md bg-slate-50/50 inline-block">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={q.imageUrl || (q as any).image_url}
+                            alt="Question figure"
+                            className="max-h-48 w-auto object-contain rounded"
+                          />
+                        </div>
+                      )}
 
                       {/* Options Grid (For MCQ) */}
                       {q.options && q.options.length > 0 && (

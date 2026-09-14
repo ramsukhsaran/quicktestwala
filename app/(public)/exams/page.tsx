@@ -11,7 +11,7 @@ export default async function ExamsPage() {
     {
       name: "SSC CGL (Combined Graduate Level)",
       category: "SSC",
-      slug: "ssc",
+      slug: "ssc-cgl",
       stages: "Tier-1 (CBT) + Tier-2 (CBT)",
       eligibility: "Bachelor's Degree",
       frequency: "Annual",
@@ -19,19 +19,9 @@ export default async function ExamsPage() {
       description: "Recruitment to Group B and Group C posts in various Ministries and Departments of the Government of India.",
     },
     {
-      name: "IBPS PO / SBI PO",
-      category: "Banking",
-      slug: "banking",
-      stages: "Prelims (CBT) + Mains (CBT) + Interview",
-      eligibility: "Graduation in any discipline",
-      frequency: "Annual",
-      sections: "Reasoning & Computer, Data Analysis, English, Banking GA",
-      description: "Recruitment of Probationary Officers across Public Sector Banks in India.",
-    },
-    {
       name: "RRB NTPC (Non-Technical Popular Categories)",
       category: "Railways",
-      slug: "railway",
+      slug: "rrb-ntpc",
       stages: "CBT-1 + CBT-2 + Typing/CBAT",
       eligibility: "12th / Graduate",
       frequency: "Regular",
@@ -77,9 +67,9 @@ export default async function ExamsPage() {
                 </Badge>
                 <h2 className="text-lg font-bold text-foreground">{exam.name}</h2>
               </div>
-              <Link href={`/test-series?category=${exam.slug}`}>
+              <Link href={`/exams/${exam.slug}`}>
                 <Button size="sm" variant="outline" className="h-8 text-xs gap-1">
-                  Practice Mock Tests
+                  View Details
                   <ArrowRight className="h-3 w-3" />
                 </Button>
               </Link>

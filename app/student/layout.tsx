@@ -1,4 +1,6 @@
-import { requireAuth } from "@/lib/auth/session";
+import { getSession } from "@/lib/auth/session";
+import { getUserById } from "@/lib/data/store";
+import { redirect } from "next/navigation";
 import { Logo } from "@/components/brand/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -11,7 +13,27 @@ export default async function StudentLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await requireAuth();
+  const session = await getSession();
+  if (!session) {
+    redirect("/login");
+  }
+
+  // Real-time access interception: Blocked students cannot access any student resources
+  let isBlocked = session.status === "BLOCKED";
+  if (!isBlocked) {
+    try {
+      const liveUser = await getUserById(session.id);
+      if (liveUser && liveUser.status === "BLOCKED") {
+        isBlocked = true;
+      }
+    } catch {
+      // Fallback
+    }
+  }
+
+  if (isBlocked) {
+    redirect("/account-locked");
+  }
 
   return (
     <div className="flex min-h-screen bg-background text-foreground print:block print:bg-white print:text-black print:min-h-0">

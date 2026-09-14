@@ -23,6 +23,13 @@ function LoginForm() {
 
   const redirectPath = searchParams.get("redirect");
 
+  React.useEffect(() => {
+    const err = searchParams.get("error");
+    if (err) {
+      setErrorMsg(err);
+    }
+  }, [searchParams]);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -30,6 +37,11 @@ function LoginForm() {
 
     const formData = new FormData(e.currentTarget);
     const result = await loginAction(formData);
+
+    if ((result as any).isLocked && result.redirectTo) {
+      router.push(result.redirectTo);
+      return;
+    }
 
     if (result.error) {
       setErrorMsg(result.error);
@@ -51,6 +63,11 @@ function LoginForm() {
     setDemoLoading(role);
 
     const result = await demoLoginAction(role);
+
+    if ((result as any).isLocked && result.redirectTo) {
+      router.push(result.redirectTo);
+      return;
+    }
 
     if (result.error) {
       setErrorMsg(result.error);
@@ -84,8 +101,17 @@ function LoginForm() {
 
           <CardContent className="p-6 pt-0 space-y-4">
             {errorMsg && (
-              <div className="p-3 text-xs rounded-lg border border-destructive/20 bg-destructive/10 text-destructive">
-                {errorMsg}
+              <div className="p-3 text-xs rounded-lg border border-destructive/20 bg-destructive/10 text-destructive flex flex-col gap-1.5">
+                <span className="font-medium">{errorMsg}</span>
+                {errorMsg.toLowerCase().includes("locked") && (
+                  <Link
+                    href="/account-locked"
+                    className="font-bold underline text-[11px] text-destructive hover:opacity-80 flex items-center gap-1"
+                  >
+                    <span>View Account Locked Helpdesk & Contact Admin</span>
+                    <ArrowRight className="h-3 w-3" />
+                  </Link>
+                )}
               </div>
             )}
 

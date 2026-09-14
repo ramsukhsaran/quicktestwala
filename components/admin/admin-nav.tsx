@@ -21,6 +21,7 @@ export const ADMIN_NAV_LINKS = [
   { href: "/admin/tests", label: "Tests Management", icon: FileCheck2 },
   { href: "/admin/questions", label: "Question Bank", icon: HelpCircle },
   { href: "/admin/questions/import", label: "Bulk CSV Import", icon: UploadCloud },
+  { href: "/admin/question-papers", label: "Previous Year Papers", icon: FileCheck2 },
   { href: "/admin/students", label: "Students", icon: Users },
   { href: "/admin/orders", label: "Orders & Revenue", icon: CreditCard },
   { href: "/admin/settings", label: "Settings", icon: Settings },

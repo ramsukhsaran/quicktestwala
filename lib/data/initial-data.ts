@@ -186,92 +186,8 @@ export const INITIAL_CATEGORIES: DemoCategory[] = [
   },
 ];
 
-export const INITIAL_TEST_SERIES: DemoTestSeries[] = [
-  {
-    id: "series_ssc_cgl_2026",
-    title: "SSC CGL 2026 Tier-1 Master Mock Series",
-    slug: "ssc-cgl-tier-1-complete-mock-series",
-    description:
-      "All-India test series modeled on the latest TCS examination interface. Features 25 full-length Tier-1 CBT tests with comprehensive solutions, percentile rankings, and sectional speed analytics.",
-    shortDescription: "25 Full-Length CBT Tests + Sectional Tests with AI-powered analytics.",
-    thumbnail: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800&auto=format&fit=crop&q=60",
-    categoryId: "cat_ssc_001",
-    examName: "SSC CGL",
-    language: "Bilingual (English + Hindi)",
-    difficulty: "MEDIUM",
-    price: 499,
-    discountPrice: 299,
-    status: "PUBLISHED",
-    isFeatured: true,
-    totalTestsCount: 25,
-    totalQuestionsCount: 2500,
-    rating: 4.9,
-    ratingCount: 3420,
-  },
-  {
-    id: "series_ibps_po_2026",
-    title: "IBPS PO Prelims 2026 High-Yield Mock Series",
-    slug: "ibps-po-prelims-practice-series",
-    description:
-      "Designed by former banking exam toppers. In-depth coverage of Data Interpretation, Syllogisms, Reading Comprehension, and Quadratic Equations with sectional countdown timers.",
-    shortDescription: "20 Full Tests + 50 Sectional Drills matching latest IBPS patterns.",
-    thumbnail: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800&auto=format&fit=crop&q=60",
-    categoryId: "cat_banking_002",
-    examName: "IBPS PO / SBI PO",
-    language: "English",
-    difficulty: "HARD",
-    price: 599,
-    discountPrice: 349,
-    status: "PUBLISHED",
-    isFeatured: true,
-    totalTestsCount: 20,
-    totalQuestionsCount: 2000,
-    rating: 4.8,
-    ratingCount: 2150,
-  },
-  {
-    id: "series_rrb_ntpc_2026",
-    title: "RRB NTPC CBT-1 All-India Mock Test Series",
-    slug: "railway-ntpc-mock-test-series",
-    description:
-      "Targeted for RRB Non-Technical Popular Categories. Covers General Awareness (History, Geography, Science), Mathematics, and General Intelligence with negative marking calibration.",
-    shortDescription: "30 CBT-1 Mock Tests with bilingual Hindi/English explanations.",
-    thumbnail: "https://images.unsplash.com/photo-1517048676732-d65bc937f952?w=800&auto=format&fit=crop&q=60",
-    categoryId: "cat_railway_003",
-    examName: "RRB NTPC",
-    language: "Bilingual (English + Hindi)",
-    difficulty: "EASY",
-    price: 399,
-    discountPrice: 199,
-    status: "PUBLISHED",
-    isFeatured: false,
-    totalTestsCount: 30,
-    totalQuestionsCount: 3000,
-    rating: 4.7,
-    ratingCount: 1840,
-  },
-  {
-    id: "series_upsc_prelims_2026",
-    title: "UPSC Prelims GS Paper-I Precision Mock Series",
-    slug: "upsc-prelims-practice-series",
-    description:
-      "Strictly based on contemporary UPSC UPSC trend lines: Statement-based questions, Assertion-Reasoning, Polity, Modern Indian History, Economy, and Environmental Science.",
-    shortDescription: "15 GS-1 Full-Length Tests + 5 CSAT Simulation Tests with detailed key.",
-    thumbnail: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=60",
-    categoryId: "cat_upsc_004",
-    examName: "UPSC CSE Prelims",
-    language: "English",
-    difficulty: "HARD",
-    price: 999,
-    discountPrice: 699,
-    status: "PUBLISHED",
-    isFeatured: true,
-    totalTestsCount: 15,
-    totalQuestionsCount: 1500,
-    rating: 4.9,
-    ratingCount: 980,
-  },
-];
+export const INITIAL_TEST_SERIES: DemoTestSeries[] = [];
+
 
 export const INITIAL_QUESTIONS: DemoQuestion[] = [
   {
@@ -424,69 +340,48 @@ export const INITIAL_QUESTIONS: DemoQuestion[] = [
   },
 ];
 
-export const INITIAL_TESTS: DemoTest[] = [
+export const INITIAL_TESTS: DemoTest[] = [];
+
+export interface DemoPreviousYearPaper {
+  id: string;
+  title: string;
+  examName: string;
+  year: string;
+  description: string;
+  testSeriesId?: string | null;
+  pdfUrl?: string;
+  isPublished: boolean;
+  accessType: "FREE" | "PAID_ANY" | "SERIES_SPECIFIC";
+  createdAt: Date;
+  questions: any[];
+}
+
+export const INITIAL_PREVIOUS_YEAR_PAPERS: DemoPreviousYearPaper[] = [
   {
-    id: "test_cgl_full_01",
-    testSeriesId: "series_ssc_cgl_2026",
-    title: "SSC CGL Tier 1 All-India Mock Test 01",
-    slug: "ssc-cgl-tier-1-all-india-mock-01",
-    description:
-      "Full-length diagnostic mock test conforming to the exact pattern of the Staff Selection Commission. Contains 4 sections: Reasoning, General Awareness, Quantitative Aptitude, and English Comprehension.",
-    durationMinutes: 60,
-    totalMarks: 200,
-    passingMarks: 75,
-    negativeMarkingRate: 0.5,
-    marksPerQuestion: 2.0,
-    instructions: buildTestInstructionsText(2, 0.5),
-    status: "PUBLISHED",
-    allowRetake: true,
-    showResultImmediately: true,
-    orderIndex: 1,
-    questionIds: [
-      "q_ssc_001",
-      "q_ssc_002",
-      "q_ssc_003",
-      "q_ssc_004",
-      "q_ssc_005",
-      "q_ssc_006",
-      "q_ssc_007",
-      "q_ssc_008",
-    ],
+    id: "pyq_ssc_cgl_2024_shift1",
+    title: "SSC CGL 2024 Tier 1 Official Shift 1 Paper",
+    examName: "SSC CGL",
+    year: "2024",
+    description: "Official shift 1 examination paper containing General Intelligence, Quantitative Aptitude, English, and General Awareness.",
+    testSeriesId: null,
+    pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+    isPublished: true,
+    accessType: "PAID_ANY",
+    createdAt: new Date("2025-01-10"),
+    questions: INITIAL_QUESTIONS.slice(0, 4),
   },
   {
-    id: "test_cgl_full_02",
-    testSeriesId: "series_ssc_cgl_2026",
-    title: "SSC CGL Tier 1 All-India Mock Test 02",
-    slug: "ssc-cgl-tier-1-all-india-mock-02",
-    description: "High-difficulty mock test simulating peak cut-off examination conditions.",
-    durationMinutes: 60,
-    totalMarks: 200,
-    passingMarks: 75,
-    negativeMarkingRate: 0.5,
-    marksPerQuestion: 2.0,
-    instructions: buildTestInstructionsText(2, 0.5),
-    status: "PUBLISHED",
-    allowRetake: true,
-    showResultImmediately: true,
-    orderIndex: 2,
-    questionIds: ["q_ssc_001", "q_ssc_002", "q_ssc_003", "q_ssc_004"],
-  },
-  {
-    id: "test_ibps_prelims_01",
-    testSeriesId: "series_ibps_po_2026",
-    title: "IBPS PO Prelims Live Mock Test 01",
-    slug: "ibps-po-prelims-live-mock-01",
-    description: "Time-bound sectional test with high-standard DI sets and Puzzles.",
-    durationMinutes: 60,
-    totalMarks: 100,
-    passingMarks: 50,
-    negativeMarkingRate: 0.25,
-    marksPerQuestion: 1.0,
-    instructions: "Strict sectional time limit of 20 minutes per section.",
-    status: "PUBLISHED",
-    allowRetake: true,
-    showResultImmediately: true,
-    orderIndex: 1,
-    questionIds: ["q_ssc_001", "q_ssc_002", "q_ssc_006"],
+    id: "pyq_rrb_ntpc_2024_stage1",
+    title: "RRB NTPC 2024 CBT Stage 1 Official Paper",
+    examName: "RRB NTPC",
+    year: "2024",
+    description: "Railway Recruitment Board Non-Technical Popular Categories CBT 1 official memory-based solved question paper.",
+    testSeriesId: null,
+    pdfUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+    isPublished: true,
+    accessType: "PAID_ANY",
+    createdAt: new Date("2025-02-15"),
+    questions: INITIAL_QUESTIONS.slice(4, 8),
   },
 ];
+

@@ -336,19 +336,32 @@ export default async function HomePage() {
                 className="flex flex-col justify-between overflow-hidden border-border hover:border-foreground/25 hover:shadow-lg transition-all group"
               >
                 <div>
-                  <div className="relative h-44 w-full overflow-hidden bg-muted">
+                  <div className="relative h-44 w-full overflow-hidden bg-muted/40 dark:bg-muted/20 border-b border-border/40 flex items-center justify-center p-4">
+                    {/* Ambient blurred backdrop */}
+                    <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
+                      <img
+                        src={series.thumbnail || "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800"}
+                        alt=""
+                        aria-hidden="true"
+                        className="h-full w-full object-cover opacity-15 blur-xl scale-125 dark:opacity-20"
+                      />
+                      <div className="absolute inset-0 bg-background/30 backdrop-blur-[2px]" />
+                    </div>
+
+                    {/* Clean uncropped image */}
                     <img
                       src={series.thumbnail || "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800"}
                       alt={series.title}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      loading="lazy"
+                      className="relative z-10 max-h-32 max-w-[85%] w-auto h-auto object-contain drop-shadow-md transition-transform duration-300 group-hover:scale-105"
                     />
-                    <div className="absolute top-3 left-3">
-                      <Badge className="bg-background/90 backdrop-blur-md text-foreground border-border text-[11px] font-semibold">
+                    <div className="absolute top-3 left-3 z-20">
+                      <Badge className="bg-background/90 backdrop-blur-md text-foreground border border-border/50 text-[11px] font-semibold shadow-sm">
                         {series.examName}
                       </Badge>
                     </div>
-                    <div className="absolute top-3 right-3">
-                      <Badge variant="outline" className="bg-background/90 text-[10px] font-mono">
+                    <div className="absolute top-3 right-3 z-20">
+                      <Badge variant="outline" className="bg-background/90 backdrop-blur-md text-[10px] font-mono border-border/50 shadow-sm">
                         {series.difficulty}
                       </Badge>
                     </div>
@@ -385,17 +398,25 @@ export default async function HomePage() {
                 <div className="p-5 pt-3 border-t border-border/60 flex items-center justify-between">
                   <div>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-xl font-bold font-mono text-foreground">
-                        {formatCurrency(series.discountPrice || series.price)}
-                      </span>
-                      {series.discountPrice && series.discountPrice < series.price && (
-                        <span className="text-xs text-muted-foreground line-through font-mono">
-                          {formatCurrency(series.price)}
+                      {(series.discountPrice === 0 || series.price === 0) ? (
+                        <span className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
+                          FREE
                         </span>
+                      ) : (
+                        <>
+                          <span className="text-xl font-bold font-mono text-foreground">
+                            {formatCurrency(series.discountPrice || series.price)}
+                          </span>
+                          {series.discountPrice && series.discountPrice < series.price && (
+                            <span className="text-xs text-muted-foreground line-through font-mono">
+                              {formatCurrency(series.price)}
+                            </span>
+                          )}
+                        </>
                       )}
                     </div>
                     <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-                      One-time access
+                      {(series.discountPrice === 0 || series.price === 0) ? "Free Practice" : "One-time access"}
                     </span>
                   </div>
 

@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { signToken, verifyToken, type UserSessionPayload } from "./jwt";
+import { getUserById } from "@/lib/data/store";
 
 export const SESSION_COOKIE_NAME = "quicktestwala_session";
 
@@ -34,6 +35,14 @@ export async function requireAuth(): Promise<UserSessionPayload> {
   }
   if (session.status === "BLOCKED") {
     throw new Error("Forbidden: Account is suspended");
+  }
+  try {
+    const liveUser = await getUserById(session.id);
+    if (liveUser && liveUser.status === "BLOCKED") {
+      throw new Error("Forbidden: Account is suspended");
+    }
+  } catch (err: any) {
+    if (err?.message?.includes("Forbidden")) throw err;
   }
   return session;
 }

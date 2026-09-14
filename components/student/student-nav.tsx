@@ -18,6 +18,7 @@ export const STUDENT_NAV_LINKS = [
   { href: "/student/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/student/test-series", label: "My Test Series", icon: Layers },
   { href: "/student/tests", label: "Mock Tests", icon: BookOpenCheck },
+  { href: "/student/question-papers", label: "PYQ Papers", icon: BookOpenCheck },
   { href: "/student/results", label: "Past Results", icon: BarChart3 },
   { href: "/student/bookmarks", label: "Bookmarked Questions", icon: Bookmark },
   { href: "/student/orders", label: "Order Receipts", icon: Receipt },

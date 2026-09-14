@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { prisma, ensureDbSchema } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import {
   AppError,
@@ -13,6 +13,7 @@ import {
   INITIAL_TEST_SERIES,
   INITIAL_TESTS,
   INITIAL_QUESTIONS,
+  INITIAL_PREVIOUS_YEAR_PAPERS,
   DemoUser,
   DemoCategory,
   DemoTestSeries,
@@ -21,61 +22,46 @@ import {
 } from "./initial-data";
 
 // In-Memory Fallback State (persists during process lifetime if database connection is offline/placeholder)
+type MemoryAttemptAnswer = {
+  selectedOptionIds: string[];
+  numericalAnswer?: string;
+  isCorrect: boolean;
+  marksAwarded: number;
+  timeSpentSeconds: number;
+  isMarkedForReview: boolean;
+  isVisited: boolean;
+};
+
 const memoryState = {
   users: [...INITIAL_USERS] as DemoUser[],
   categories: [...INITIAL_CATEGORIES] as DemoCategory[],
   testSeries: [...INITIAL_TEST_SERIES] as DemoTestSeries[],
   tests: [...INITIAL_TESTS] as DemoTest[],
   questions: [...INITIAL_QUESTIONS] as DemoQuestion[],
-  orders: [
-    {
-      id: "ord_demo_001",
-      orderNumber: "ORD-2026-9812",
-      userId: "usr_student_001",
-      testSeriesId: "series_ssc_cgl_2026",
-      amount: 299,
-      currency: "INR",
-      status: "PAID",
-      paymentMethod: "RAZORPAY",
-      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-    },
-  ],
-  attempts: [
-    {
-      id: "att_demo_001",
-      userId: "usr_student_001",
-      testId: "test_cgl_full_01",
-      status: "SUBMITTED",
-      score: 14.0,
-      totalMarks: 16.0,
-      correctAnswersCount: 7,
-      incorrectAnswersCount: 1,
-      unansweredCount: 0,
-      accuracy: 87.5,
-      percentage: 87.5,
-      timeTakenSeconds: 2420,
-      remainingTimeSeconds: 1180,
-      startedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      completedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 2420 * 1000),
-      answers: {} as Record<string, {
-        selectedOptionIds: string[];
-        numericalAnswer?: string;
-        isCorrect: boolean;
-        marksAwarded: number;
-        timeSpentSeconds: number;
-        isMarkedForReview: boolean;
-        isVisited: boolean;
-      }>,
-    },
-  ],
+  previousYearPapers: [...INITIAL_PREVIOUS_YEAR_PAPERS] as any[],
+  orders: [] as any[],
+  attempts: [] as any[],
   bookmarks: [] as { id: string; userId: string; questionId: string; notes?: string; createdAt: Date }[],
 };
 
-// Check if database URL is configured and non-placeholder
-function isDbConfigured(): boolean {
-  const url = process.env.DATABASE_URL;
-  return Boolean(url && !url.includes("npg_placeholder") && !url.includes("localhost/db"));
+// Check if database URL is configured and non-placeholder with circuit breaker
+let dbUnreachableFlag = false;
+
+export function markDbUnreachable() {
+  dbUnreachableFlag = true;
 }
+
+export function isDbConfigured(): boolean {
+  const url = process.env.DATABASE_URL;
+  if (!url || url.includes("npg_placeholder") || url.includes("localhost/db")) {
+    return false;
+  }
+  if (dbUnreachableFlag) {
+    return false;
+  }
+  return true;
+}
+
 
 // -------------------------------------------------------------
 // USER OPERATIONS
@@ -405,7 +391,11 @@ export async function getTestSeriesList(options?: {
 }) {
   if (isDbConfigured()) {
     try {
-      const where: Record<string, unknown> = { status: "PUBLISHED" };
+      const where: Record<string, unknown> = {
+        status: "PUBLISHED",
+        id: { not: "pro_access_all_series" },
+        slug: { notIn: ["pro-full-access", "pro-access-membership-system"] },
+      };
       if (options?.categoryId) where.categoryId = options.categoryId;
       if (options?.difficulty) where.difficulty = options.difficulty;
       if (options?.isFeatured !== undefined) where.isFeatured = options.isFeatured;
@@ -426,7 +416,13 @@ export async function getTestSeriesList(options?: {
     }
   }
 
-  let list = memoryState.testSeries.filter((ts) => ts.status === "PUBLISHED");
+  let list = memoryState.testSeries.filter(
+    (ts) =>
+      ts.status === "PUBLISHED" &&
+      ts.id !== "pro_access_all_series" &&
+      ts.slug !== "pro-full-access" &&
+      ts.slug !== "pro-access-membership-system"
+  );
 
   if (options?.categorySlug) {
     const cat = memoryState.categories.find((c) => c.slug === options.categorySlug);
@@ -591,18 +587,123 @@ export async function updateTestSeries(id: string, data: Partial<DemoTestSeries>
   return null;
 }
 
+export async function getAdminTestSeriesList(options?: {
+  status?: string;
+  search?: string;
+}) {
+  if (isDbConfigured()) {
+    try {
+      const where: Record<string, unknown> = {
+        id: { not: "pro_access_all_series" },
+        slug: { notIn: ["pro-full-access", "pro-access-membership-system"] },
+      };
+      if (options?.status && options.status !== "ALL") {
+        where.status = options.status;
+      }
+      if (options?.search && options.search.trim()) {
+        const q = options.search.trim();
+        where.OR = [
+          { title: { contains: q, mode: "insensitive" } },
+          { examName: { contains: q, mode: "insensitive" } },
+        ];
+      }
+
+      const list = await prisma.testSeries.findMany({
+        where,
+        include: {
+          category: true,
+          tests: { select: { id: true, title: true, status: true } },
+          orders: { select: { id: true, status: true, amount: true } },
+        },
+        orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
+      });
+
+      return list.map((ts) => ({
+        ...ts,
+        totalTestsCount: ts.tests.length,
+        enrollmentCount: ts.orders.filter((o) => o.status === "PAID").length,
+      }));
+    } catch (err: any) {
+      if (err?.message?.includes("Can't reach") || err?.message?.includes("connect")) {
+        markDbUnreachable();
+      }
+    }
+  }
+
+  let list = memoryState.testSeries.filter(
+    (ts) =>
+      ts.id !== "pro_access_all_series" &&
+      ts.slug !== "pro-full-access" &&
+      ts.slug !== "pro-access-membership-system"
+  );
+  if (options?.status && options.status !== "ALL") {
+    list = list.filter((ts) => ts.status === options.status);
+  }
+  if (options?.search && options.search.trim()) {
+    const q = options.search.toLowerCase().trim();
+    list = list.filter(
+      (ts) =>
+        ts.title.toLowerCase().includes(q) ||
+        ts.examName.toLowerCase().includes(q) ||
+        ts.description.toLowerCase().includes(q)
+    );
+  }
+
+  return list.map((ts) => {
+    const tests = memoryState.tests.filter((t) => t.testSeriesId === ts.id);
+    const orders = memoryState.orders.filter((o) => o.testSeriesId === ts.id && o.status === "PAID");
+    return {
+      ...ts,
+      category: memoryState.categories.find((c) => c.id === ts.categoryId) || null,
+      tests,
+      totalTestsCount: tests.length,
+      enrollmentCount: orders.length,
+    };
+  });
+}
+
+export async function toggleTestSeriesStatus(id: string, targetStatus?: "PUBLISHED" | "DRAFT") {
+  const current = await getTestSeriesById(id);
+  if (!current) throw new Error("Test series not found");
+
+  const newStatus = targetStatus || (current.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED");
+
+  if (isDbConfigured()) {
+    try {
+      return await prisma.testSeries.update({
+        where: { id },
+        data: { status: newStatus as any },
+      });
+    } catch (err: any) {
+      if (err?.message?.includes("Can't reach")) markDbUnreachable();
+    }
+  }
+
+  const idx = memoryState.testSeries.findIndex((ts) => ts.id === id);
+  if (idx !== -1) {
+    memoryState.testSeries[idx].status = newStatus as any;
+    return memoryState.testSeries[idx];
+  }
+  return null;
+}
+
 export async function deleteTestSeries(id: string) {
   if (isDbConfigured()) {
     try {
       return await prisma.testSeries.delete({ where: { id } });
-    } catch {
-      // Fallback
+    } catch (err: any) {
+      if (err?.message?.includes("Can't reach")) markDbUnreachable();
     }
   }
 
+  const testIds = memoryState.tests.filter((t) => t.testSeriesId === id).map((t) => t.id);
+  memoryState.tests = memoryState.tests.filter((t) => t.testSeriesId !== id);
+  memoryState.orders = memoryState.orders.filter((o) => o.testSeriesId !== id);
+  memoryState.attempts = memoryState.attempts.filter((a) => !testIds.includes(a.testId));
   memoryState.testSeries = memoryState.testSeries.filter((ts) => ts.id !== id);
   return true;
 }
+
 
 // -------------------------------------------------------------
 // TEST OPERATIONS
@@ -779,7 +880,56 @@ export async function updateTest(id: string, data: Partial<DemoTest>) {
   return memoryState.tests[idx];
 }
 
+export async function toggleTestStatus(id: string, targetStatus?: "PUBLISHED" | "DRAFT") {
+  const current = await getTestById(id);
+  if (!current) throw new Error("Mock test not found");
+
+  const newStatus = targetStatus || (current.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED");
+
+  if (isDbConfigured()) {
+    try {
+      return await prisma.test.update({
+        where: { id },
+        data: { status: newStatus as any },
+      });
+    } catch (err: any) {
+      if (err?.message?.includes("Can't reach")) markDbUnreachable();
+    }
+  }
+
+  const idx = memoryState.tests.findIndex((t) => t.id === id);
+  if (idx !== -1) {
+    memoryState.tests[idx].status = newStatus as any;
+    return memoryState.tests[idx];
+  }
+  return null;
+}
+
+export async function deleteTest(id: string) {
+  if (isDbConfigured()) {
+    try {
+      await prisma.test.delete({ where: { id } });
+      return true;
+    } catch (err: any) {
+      if (err?.message?.includes("Can't reach")) markDbUnreachable();
+    }
+  }
+
+  const test = memoryState.tests.find((t) => t.id === id);
+  memoryState.tests = memoryState.tests.filter((t) => t.id !== id);
+  memoryState.attempts = memoryState.attempts.filter((a) => a.testId !== id);
+
+  if (test?.testSeriesId) {
+    const parent = memoryState.testSeries.find((ts) => ts.id === test.testSeriesId);
+    if (parent) {
+      parent.totalTestsCount = memoryState.tests.filter((t) => t.testSeriesId === test.testSeriesId).length;
+    }
+  }
+  return true;
+}
+
 // -------------------------------------------------------------
+
 // QUESTIONS OPERATIONS
 // -------------------------------------------------------------
 export async function getAllQuestions(filters?: {
@@ -905,6 +1055,218 @@ export async function deleteQuestion(id: string) {
   return null;
 }
 
+export async function listPreviousYearPapers() {
+  if (isDbConfigured()) {
+    try {
+      await ensureDbSchema();
+      const rows: any[] = await prisma.$queryRawUnsafe(`
+        SELECT id, title, exam_name as "examName", year, description, 
+               test_series_id as "testSeriesId", pdf_url as "pdfUrl", 
+               is_published as "isPublished", access_type as "accessType",
+               questions, created_at as "createdAt"
+        FROM "previous_year_papers"
+        ORDER BY created_at DESC;
+      `);
+      if (Array.isArray(rows)) {
+        return rows.map((r) => ({
+          ...r,
+          questions: typeof r.questions === "string" ? JSON.parse(r.questions) : r.questions || [],
+        }));
+      }
+    } catch (err: any) {
+      console.warn("listPreviousYearPapers DB fallback:", err?.message || err);
+    }
+  }
+
+  return [...memoryState.previousYearPapers]
+    .filter((paper) => paper?.isPublished !== false)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+export async function getPreviousYearPaperById(id: string) {
+  if (isDbConfigured()) {
+    try {
+      await ensureDbSchema();
+      const rows: any[] = await prisma.$queryRawUnsafe(`
+        SELECT id, title, exam_name as "examName", year, description, 
+               test_series_id as "testSeriesId", pdf_url as "pdfUrl", 
+               is_published as "isPublished", access_type as "accessType",
+               questions, created_at as "createdAt"
+        FROM "previous_year_papers"
+        WHERE id = $1
+        LIMIT 1;
+      `, id);
+      if (Array.isArray(rows) && rows.length > 0) {
+        const r = rows[0];
+        return {
+          ...r,
+          questions: typeof r.questions === "string" ? JSON.parse(r.questions) : r.questions || [],
+        };
+      }
+    } catch (err: any) {
+      console.warn("getPreviousYearPaperById DB fallback:", err?.message || err);
+    }
+  }
+
+  return memoryState.previousYearPapers.find((paper) => paper.id === id) || null;
+}
+
+export async function createPreviousYearPaper(data: {
+  title: string;
+  examName: string;
+  year: string;
+  description?: string;
+  testSeriesId?: string | null;
+  pdfUrl?: string;
+  isPublished?: boolean;
+  accessType?: "FREE" | "PAID_ANY" | "SERIES_SPECIFIC";
+  questions: Array<{
+    questionText: string;
+    questionType?: "MCQ" | "MULTIPLE_CORRECT" | "NUMERICAL";
+    subject: string;
+    topic?: string;
+    difficulty?: "EASY" | "MEDIUM" | "HARD";
+    explanation?: string;
+    marks?: number;
+    negativeMarks?: number;
+    correctNumericalAnswer?: string;
+    options?: Array<{ optionKey: string; optionText: string; isCorrect?: boolean }>;
+    correctOptionKeys?: string[] | string;
+  }>;
+}) {
+  const id = `pyq_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+  const accessType = data.accessType || (data.testSeriesId ? "SERIES_SPECIFIC" : "PAID_ANY");
+  const normalizedQuestions = (data.questions || []).map((q, index) => ({
+    id: `pyq_q_${Date.now()}_${index}`,
+    questionText: q.questionText,
+    questionType: q.questionType || (q.correctNumericalAnswer ? "NUMERICAL" : (q.options && q.options.length > 0 ? "MCQ" : "MCQ")),
+    subject: q.subject,
+    topic: q.topic || "General",
+    difficulty: q.difficulty || "MEDIUM",
+    explanation: q.explanation || "",
+    marks: Number(q.marks ?? 2),
+    negativeMarks: Number(q.negativeMarks ?? 0.5),
+    correctNumericalAnswer: q.correctNumericalAnswer || undefined,
+    options: (q.options || []).map((opt, idx) => ({
+      id: `pyq_opt_${Date.now()}_${index}_${idx}`,
+      optionKey: opt.optionKey || String.fromCharCode(65 + idx),
+      optionText: opt.optionText || "",
+      isCorrect: Boolean(opt.isCorrect),
+      orderIndex: idx,
+    })),
+    correctOptionKeys: Array.isArray(q.correctOptionKeys)
+      ? q.correctOptionKeys
+      : typeof q.correctOptionKeys === "string"
+        ? q.correctOptionKeys.split(/[\s,;]+/).filter(Boolean)
+        : undefined,
+  }));
+
+  const paper = {
+    id,
+    title: data.title,
+    examName: data.examName,
+    year: data.year,
+    description: data.description || "",
+    testSeriesId: data.testSeriesId || null,
+    pdfUrl: data.pdfUrl || "",
+    isPublished: data.isPublished !== false,
+    accessType,
+    createdAt: new Date(),
+    questions: normalizedQuestions,
+  };
+
+  if (isDbConfigured()) {
+    try {
+      await ensureDbSchema();
+      await prisma.$executeRawUnsafe(`
+        INSERT INTO "previous_year_papers" 
+        (id, title, exam_name, year, description, test_series_id, pdf_url, is_published, access_type, questions, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, NOW(), NOW())
+      `, 
+        id, data.title, data.examName, data.year, data.description || "", 
+        data.testSeriesId || null, data.pdfUrl || "", data.isPublished !== false,
+        accessType, JSON.stringify(normalizedQuestions)
+      );
+      console.log("✅ Previous year paper persisted to PostgreSQL:", id);
+    } catch (err: any) {
+      console.error("Failed to insert previous year paper into DB:", err?.message || err);
+    }
+  }
+
+  memoryState.previousYearPapers.unshift(paper);
+  return paper;
+}
+
+export async function deletePreviousYearPaper(id: string) {
+  if (isDbConfigured()) {
+    try {
+      await ensureDbSchema();
+      await prisma.$executeRawUnsafe(`DELETE FROM "previous_year_papers" WHERE id = $1;`, id);
+    } catch (err: any) {
+      console.warn("deletePreviousYearPaper DB fallback:", err?.message || err);
+    }
+  }
+  memoryState.previousYearPapers = memoryState.previousYearPapers.filter((p) => p.id !== id);
+  return true;
+}
+
+export async function hasStudentAccessToPaper(userId: string, paper: any): Promise<boolean> {
+  if (!paper) return false;
+  if (paper.accessType === "FREE") return true;
+
+  if (userId) {
+    const user = await getUserById(userId);
+    if (user?.role === "ADMIN") return true;
+
+    // Any student who paid for any test series or Pro pass has access
+    const orders = await getUserOrders(userId);
+    const hasAnyPaidOrder = orders.some((o: any) => o.status === "PAID");
+    if (hasAnyPaidOrder) return true;
+
+    const hasPro = await hasActiveProAccess(userId);
+    if (hasPro) return true;
+
+    // Series-specific match
+    if (paper.testSeriesId) {
+      const hasSeries = await hasStudentAccessToSeries(userId, paper.testSeriesId);
+      if (hasSeries) return true;
+    }
+  }
+
+  return false;
+}
+
+export async function getAccessiblePreviousYearPapersForUser(userId: string) {
+  const papers = await listPreviousYearPapers();
+  const accessible: any[] = [];
+
+  for (const paper of papers) {
+    if (!paper?.isPublished) continue;
+    const allowed = await hasStudentAccessToPaper(userId, paper);
+    if (allowed) {
+      accessible.push(paper);
+    }
+  }
+
+  return accessible;
+}
+
+export async function getAllPreviousYearPapersForStudent(userId: string) {
+  const papers = await listPreviousYearPapers();
+  const result: any[] = [];
+
+  for (const paper of papers) {
+    if (!paper?.isPublished) continue;
+    const isAccessible = await hasStudentAccessToPaper(userId, paper);
+    result.push({
+      ...paper,
+      isAccessible,
+    });
+  }
+
+  return result;
+}
+
 export async function createQuestion(data: {
   questionText: string;
   questionType?: "MCQ" | "MULTIPLE_CORRECT" | "NUMERICAL";
@@ -914,6 +1276,7 @@ export async function createQuestion(data: {
   explanation?: string;
   marks?: number;
   negativeMarks?: number;
+  imageUrl?: string;
   correctNumericalAnswer?: string;
   options?: Array<{ optionKey: string; optionText: string; isCorrect?: boolean }>;
   correctOptionKeys?: string[] | string;
@@ -974,6 +1337,7 @@ export async function createQuestion(data: {
           explanation: data.explanation,
           marks: Number(data.marks ?? 0),
           negativeMarks: Number(data.negativeMarks ?? 0),
+          imageUrl: data.imageUrl || null,
           correctNumericalAnswer: qType === "NUMERICAL" ? data.correctNumericalAnswer : null,
           options:
             qType !== "NUMERICAL" && mappedOptions.length > 0
@@ -1005,6 +1369,7 @@ export async function createQuestion(data: {
     explanation: data.explanation || "",
     marks: Number(data.marks ?? 0),
     negativeMarks: Number(data.negativeMarks ?? 0),
+    imageUrl: data.imageUrl,
     correctNumericalAnswer: qType === "NUMERICAL" ? data.correctNumericalAnswer : undefined,
     options:
       qType !== "NUMERICAL"
@@ -1032,6 +1397,7 @@ export async function bulkCreateQuestions(
     explanation?: string;
     marks?: number;
     negativeMarks?: number;
+    imageUrl?: string;
     correctNumericalAnswer?: string;
     options?: { optionKey: string; optionText: string; isCorrect: boolean }[];
   }>
@@ -1053,6 +1419,7 @@ export async function bulkCreateQuestions(
             explanation: q.explanation || null,
             marks: Number(q.marks ?? 2.0),
             negativeMarks: Number(q.negativeMarks ?? 0.5),
+            imageUrl: q.imageUrl || null,
             correctNumericalAnswer: q.correctNumericalAnswer || null,
             status: "ACTIVE",
           })),
@@ -1112,6 +1479,7 @@ export async function bulkCreateQuestions(
       explanation: q.explanation || "",
       marks: Number(q.marks ?? 2.0),
       negativeMarks: Number(q.negativeMarks ?? 0.5),
+      imageUrl: q.imageUrl,
       correctNumericalAnswer: q.correctNumericalAnswer,
       options:
         q.options?.map((opt, idx) => ({
@@ -1139,7 +1507,15 @@ export async function getOrCreateTestAttempt(userId: string, testId: string) {
   const test = await getTestById(testId);
   if (!test) throw new Error("Test not found");
 
+  const hasAccess = await hasStudentAccessToTest(userId, testId);
+  if (!hasAccess) {
+    throw new ForbiddenError(
+      "Access Denied: This test belongs to a premium test series. Please purchase the test series to attempt this test."
+    );
+  }
+
   if (isDbConfigured()) {
+
     try {
       // Find existing in-progress attempt
       let attempt = await prisma.testAttempt.findFirst({
@@ -1208,15 +1584,7 @@ export async function getOrCreateTestAttempt(userId: string, testId: string) {
       remainingTimeSeconds: test.durationMinutes * 60,
       startedAt: new Date(),
       completedAt: new Date(),
-      answers: {} as Record<string, {
-        selectedOptionIds: string[];
-        numericalAnswer?: string;
-        isCorrect: boolean;
-        marksAwarded: number;
-        timeSpentSeconds: number;
-        isMarkedForReview: boolean;
-        isVisited: boolean;
-      }>,
+      answers: {} as Record<string, MemoryAttemptAnswer>,
     };
     memoryState.attempts.push(fallbackAttempt);
     attempt = fallbackAttempt;
@@ -1226,7 +1594,8 @@ export async function getOrCreateTestAttempt(userId: string, testId: string) {
     throw new Error("Attempt could not be initialized");
   }
 
-  const answersArray = Object.entries(attempt.answers ?? {}).map(([qid, ans]) => ({
+  const answerMap = (attempt.answers ?? {}) as Record<string, MemoryAttemptAnswer>;
+  const answersArray = Object.entries(answerMap).map(([qid, ans]) => ({
     questionId: qid,
     selectedOptionIds: JSON.stringify(ans.selectedOptionIds),
     numericalAnswer: ans.numericalAnswer,
@@ -1517,7 +1886,8 @@ export async function getAttemptResult(attemptId: string) {
   if (!attempt) return null;
   const test = await getTestById(attempt.testId);
 
-  const answersArray = Object.entries(attempt.answers ?? {}).map(([qid, ans]) => ({
+  const answerMap = (attempt.answers ?? {}) as Record<string, MemoryAttemptAnswer>;
+  const answersArray = Object.entries(answerMap).map(([qid, ans]) => ({
     questionId: qid,
     selectedOptionIds: JSON.stringify(ans.selectedOptionIds || []),
     numericalAnswer: ans.numericalAnswer,
@@ -1543,15 +1913,64 @@ export async function getAttemptResult(attemptId: string) {
 // -------------------------------------------------------------
 // ORDERS & ACCESS CONTROL
 // -------------------------------------------------------------
-export async function hasUserPurchasedSeries(userId: string, seriesId: string) {
+export async function hasActiveProAccess(userId: string): Promise<boolean> {
+  if (!userId) return false;
+  const membership = await getStudentProMembership(userId);
+  return Boolean(membership);
+}
+
+export async function getStudentProMembership(userId: string) {
+  if (!userId) return null;
   if (isDbConfigured()) {
     try {
+      await ensureDbSchema();
+      const order = await prisma.order.findFirst({
+        where: {
+          userId,
+          status: "PAID",
+          OR: [
+            { testSeriesId: "pro_access_all_series" },
+            { planType: "PRO_FULL_ACCESS" as any },
+          ],
+        },
+        orderBy: { createdAt: "desc" },
+      } as any);
+
+      if (!order) return null;
+
+      if (order.accessExpiresAt && new Date(order.accessExpiresAt).getTime() < Date.now()) {
+        return null;
+      }
+      return order;
+    } catch (err: any) {
+      if (err?.code === "P2022" || err?.message?.includes("Can't reach")) markDbUnreachable();
+    }
+  }
+
+  const memOrder = memoryState.orders.find(
+    (o) =>
+      o.userId === userId &&
+      o.status === "PAID" &&
+      (o.testSeriesId === "pro_access_all_series" || o.planType === "PRO_FULL_ACCESS") &&
+      (!o.accessExpiresAt || new Date(o.accessExpiresAt).getTime() > Date.now())
+  );
+  return memOrder || null;
+}
+
+export async function hasUserPurchasedSeries(userId: string, seriesId: string) {
+  if (await hasActiveProAccess(userId)) {
+    return true;
+  }
+
+  if (isDbConfigured()) {
+    try {
+      await ensureDbSchema();
       const order = await prisma.order.findFirst({
         where: { userId, testSeriesId: seriesId, status: "PAID" },
-      });
+      } as any);
       return Boolean(order);
-    } catch {
-      // Fallback
+    } catch (err: any) {
+      if (err?.code === "P2022" || err?.message?.includes("Can't reach")) markDbUnreachable();
     }
   }
 
@@ -1559,6 +1978,30 @@ export async function hasUserPurchasedSeries(userId: string, seriesId: string) {
     (o) => o.userId === userId && o.testSeriesId === seriesId && o.status === "PAID"
   );
 }
+
+export async function hasStudentAccessToSeries(userId: string, seriesId: string): Promise<boolean> {
+  const series = await getTestSeriesById(seriesId);
+  if (!series || series.status !== "PUBLISHED") {
+    return false;
+  }
+  const isFree = Number(series.price) === 0 || Number(series.discountPrice) === 0;
+  if (isFree) {
+    return true;
+  }
+  if (await hasActiveProAccess(userId)) {
+    return true;
+  }
+  return await hasUserPurchasedSeries(userId, seriesId);
+}
+
+export async function hasStudentAccessToTest(userId: string, testId: string): Promise<boolean> {
+  const test = await getTestById(testId);
+  if (!test || test.status !== "PUBLISHED") {
+    return false;
+  }
+  return await hasStudentAccessToSeries(userId, test.testSeriesId);
+}
+
 
 export async function hasStudentAttemptedTest(userId: string, testId: string): Promise<boolean> {
   if (isDbConfigured()) {
@@ -1666,38 +2109,84 @@ export async function createOrder(data: {
   userId: string;
   testSeriesId: string;
   amount: number;
+  planType?: "SERIES" | "PRO";
+  accessExpiresAt?: Date;
 }) {
   const orderNumber = `ORD-${Date.now().toString().slice(-6)}-${Math.random()
     .toString(36)
     .substring(2, 6)
     .toUpperCase()}`;
 
+  const normalizedSeriesId = data.testSeriesId || "pro_access_all_series";
+  const normalizedPlanType = data.planType === "PRO" ? "PRO" : "SERIES";
+
   if (isDbConfigured()) {
     try {
+      await ensureDbSchema();
+      const isProBundle = normalizedPlanType === "PRO";
+      const bundleSeriesId = "pro_access_all_series";      if (isProBundle) {
+        const bundleSeries = await prisma.testSeries.upsert({
+          where: { id: bundleSeriesId },
+          create: {
+            id: bundleSeriesId,
+            title: "QuickTestWala Pro Access Membership",
+            slug: "pro-access-membership-system",
+            description: "System membership pass providing full unlocked access to all test series on QuickTestWala for 1 year.",
+            shortDescription: "Pro Access Membership (1 Year)",
+            examName: "All Exams",
+            language: "Bilingual (Hindi + English)",
+            difficulty: "MEDIUM",
+            price: 999,
+            discountPrice: 999,
+            status: "ARCHIVED",
+            isFeatured: false,
+            totalTestsCount: 0,
+            totalQuestionsCount: 0,
+          },
+          update: {
+            status: "ARCHIVED",
+            title: "QuickTestWala Pro Access Membership",
+            slug: "pro-access-membership-system",
+          },
+        });
+        if (!bundleSeries) {
+          throw new Error("Failed to ensure Pro bundle series exists");
+        }
+      }
+
+      const oneYearExpiry = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+      const orderData: any = {
+        orderNumber,
+        userId: data.userId,
+        testSeriesId: isProBundle ? bundleSeriesId : normalizedSeriesId,
+        amount: data.amount,
+        status: "PENDING",
+        planType: isProBundle ? "PRO_FULL_ACCESS" : "SERIES_SINGLE",
+        accessExpiresAt: data.accessExpiresAt || (isProBundle ? oneYearExpiry : undefined),
+      };
+
       return await prisma.order.create({
-        data: {
-          orderNumber,
-          userId: data.userId,
-          testSeriesId: data.testSeriesId,
-          amount: data.amount,
-          status: "PENDING",
-        },
+        data: orderData,
         include: { testSeries: true },
       });
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.error("[createOrder] Prisma error:", err);
+      // Fallback to memory state for offline or validation failures
     }
   }
 
+  const oneYearExpiry = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
   const newOrder = {
     id: `ord_${Date.now()}`,
     orderNumber,
     userId: data.userId,
-    testSeriesId: data.testSeriesId,
+    testSeriesId: normalizedSeriesId,
     amount: data.amount,
     currency: "INR",
     status: "PENDING",
     paymentMethod: "RAZORPAY",
+    planType: normalizedPlanType === "PRO" ? "PRO_FULL_ACCESS" : "SERIES_SINGLE",
+    accessExpiresAt: data.accessExpiresAt || (normalizedPlanType === "PRO" ? oneYearExpiry : null),
     createdAt: new Date(),
   };
 
@@ -1706,27 +2195,44 @@ export async function createOrder(data: {
   return { ...newOrder, testSeries: series };
 }
 
-export async function activateOrder(orderId: string, providerPaymentId: string) {
+export async function activateOrder(
+  orderId: string,
+  providerPaymentId: string,
+  metadata?: { planType?: "SERIES" | "PRO" }
+) {
   if (isDbConfigured()) {
     try {
-      const existing = await prisma.order.findUnique({ where: { id: orderId } });
-      const order = await prisma.order.update({
-        where: { id: orderId },
-        data: {
-          status: "PAID",
-          payments: {
-            create: {
-              provider: "RAZORPAY",
-              providerPaymentId,
-              amount: existing?.amount ?? 0,
-              status: "PAID",
-            },
+      const existing = await prisma.order.findUnique({ where: { id: orderId } } as any);
+      if (!existing) {
+        throw new Error(`Order ${orderId} not found`);
+      }
+
+      const updateData: any = {
+        status: "PAID",
+        payments: {
+          create: {
+            provider: "RAZORPAY",
+            providerPaymentId,
+            amount: existing.amount ?? 0,
+            status: "PAID",
           },
         },
+      };
+      if (
+        (metadata?.planType === "PRO" || existing.planType === "PRO_FULL_ACCESS" || existing.testSeriesId === "pro_access_all_series") &&
+        !existing.accessExpiresAt
+      ) {
+        updateData.accessExpiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+      }
+
+      const order = await prisma.order.update({
+        where: { id: orderId },
+        data: updateData,
         include: { testSeries: true },
       });
       return order;
-    } catch {
+    } catch (err) {
+      console.error("[activateOrder] Prisma error:", err);
       // Fallback
     }
   }
@@ -1742,6 +2248,7 @@ export async function activateOrder(orderId: string, providerPaymentId: string) 
 export async function getUserOrders(userId: string) {
   if (isDbConfigured()) {
     try {
+      await ensureDbSchema();
       return await prisma.order.findMany({
         where: { userId },
         include: { testSeries: true },
@@ -1763,6 +2270,7 @@ export async function getUserOrders(userId: string) {
 export async function getAllOrders() {
   if (isDbConfigured()) {
     try {
+      await ensureDbSchema();
       return await prisma.order.findMany({
         include: { testSeries: true, user: true },
         orderBy: { createdAt: "desc" },
@@ -1777,6 +2285,39 @@ export async function getAllOrders() {
     user: memoryState.users.find((u) => u.id === o.userId),
     testSeries: memoryState.testSeries.find((ts) => ts.id === o.testSeriesId),
   }));
+}
+
+export async function markOrderAsPaid(orderId: string) {
+  if (isDbConfigured()) {
+    try {
+      return await prisma.order.update({
+        where: { id: orderId },
+        data: {
+          status: "PAID",
+          payments: {
+            create: {
+              provider: "ADMIN_MANUAL",
+              providerPaymentId: `manual_admin_${Date.now()}`,
+              amount: 0,
+              status: "PAID",
+            },
+          },
+        },
+        include: { testSeries: true, user: true },
+      });
+    } catch (err: any) {
+      if (err?.message?.includes("Can't reach")) markDbUnreachable();
+    }
+  }
+
+  const order = memoryState.orders.find((o) => o.id === orderId);
+  if (order) {
+    order.status = "PAID";
+    order.paymentMethod = "ADMIN_ACTIVATION";
+  }
+  const series = memoryState.testSeries.find((ts) => ts.id === order?.testSeriesId);
+  const user = memoryState.users.find((u) => u.id === order?.userId);
+  return { ...order, testSeries: series, user };
 }
 
 // -------------------------------------------------------------
@@ -1829,6 +2370,9 @@ export async function getStudentDashboardStats(userId: string) {
     accuracy: Math.round(a.accuracy || 0),
   }));
 
+  const isProMember = await hasActiveProAccess(userId);
+  const proMembership = isProMember ? await getStudentProMembership(userId) : null;
+
   return {
     purchasedSeriesCount: paidOrders.length,
     testsCompletedCount: completedCount,
@@ -1839,6 +2383,8 @@ export async function getStudentDashboardStats(userId: string) {
     recentTests: attempts.slice(0, 5),
     scoreTrend,
     hasAttemptHistory: completedCount > 0,
+    isProMember,
+    proMembership,
   };
 }
 
@@ -1847,10 +2393,13 @@ export async function getAdminDashboardStats() {
   let activeStudentsCount = 0;
   let totalRevenue = 0;
   let totalSeriesCount = 0;
+  let freeSeriesCount = 0;
+  let paidSeriesCount = 0;
   let totalTestsCount = 0;
   let totalQuestionsCount = 0;
   let attemptsCount = 0;
   let topSeries: any[] = [];
+  let recentOrders: any[] = [];
 
   if (isDbConfigured()) {
     try {
@@ -1859,52 +2408,72 @@ export async function getAdminDashboardStats() {
         activeStudents,
         paidOrders,
         seriesCount,
+        freeSeries,
+        paidSeries,
         testsCount,
         questionsCount,
         attCount,
         series,
+        orders,
       ] = await Promise.all([
         prisma.user.count({ where: { role: "STUDENT" } }),
         prisma.user.count({ where: { role: "STUDENT", status: "ACTIVE" } }),
         prisma.order.findMany({ where: { status: "PAID" }, select: { amount: true } }),
-        prisma.testSeries.count(),
+        prisma.testSeries.count({ where: { id: { not: "pro_access_all_series" } } }),
+        prisma.testSeries.count({ where: { price: 0, id: { not: "pro_access_all_series" } } }),
+        prisma.testSeries.count({ where: { price: { gt: 0 }, id: { not: "pro_access_all_series" } } }),
         prisma.test.count(),
         prisma.question.count(),
         prisma.testAttempt.count(),
-        prisma.testSeries.findMany({ take: 4, orderBy: { createdAt: "desc" } }),
+        prisma.testSeries.findMany({ where: { id: { not: "pro_access_all_series" } }, take: 5, orderBy: { createdAt: "desc" } }),
+        prisma.order.findMany({ take: 5, orderBy: { createdAt: "desc" }, include: { user: true, testSeries: true } }),
       ]);
 
       studentsCount = students;
       activeStudentsCount = activeStudents;
       totalRevenue = paidOrders.reduce((sum, o) => sum + (o.amount || 0), 0);
       totalSeriesCount = seriesCount;
+      freeSeriesCount = freeSeries;
+      paidSeriesCount = paidSeries;
       totalTestsCount = testsCount;
       totalQuestionsCount = questionsCount;
       attemptsCount = attCount;
       topSeries = series;
-    } catch (err) {
-      console.error("getAdminDashboardStats error:", err);
+      recentOrders = orders;
+    } catch (err: any) {
+      if (err?.message?.includes("Can't reach")) markDbUnreachable();
     }
   } else {
     studentsCount = memoryState.users.filter((u) => u.role === "STUDENT").length;
     activeStudentsCount = memoryState.users.filter((u) => u.role === "STUDENT" && u.status === "ACTIVE").length;
-    totalSeriesCount = memoryState.testSeries.length;
+    const validSeries = memoryState.testSeries.filter((s) => s.id !== "pro_access_all_series" && s.slug !== "pro-full-access");
+    totalSeriesCount = validSeries.length;
+    freeSeriesCount = validSeries.filter((s) => Number(s.price) === 0 || Number(s.discountPrice) === 0).length;
+    paidSeriesCount = validSeries.filter((s) => Number(s.price) > 0 && Number(s.discountPrice ?? 1) > 0).length;
     totalTestsCount = memoryState.tests.length;
     totalQuestionsCount = memoryState.questions.length;
     totalRevenue = memoryState.orders.filter((o) => o.status === "PAID").reduce((sum, o) => sum + o.amount, 0);
     attemptsCount = memoryState.attempts.length;
-    topSeries = memoryState.testSeries.slice(0, 4);
+    topSeries = validSeries.slice(0, 5);
+    recentOrders = memoryState.orders.slice(0, 5).map((o) => ({
+      ...o,
+      user: memoryState.users.find((u) => u.id === o.userId),
+      testSeries: memoryState.testSeries.find((s) => s.id === o.testSeriesId),
+    }));
   }
 
   return {
     totalStudents: studentsCount,
     activeStudents: activeStudentsCount,
     totalTestSeries: totalSeriesCount,
+    freeSeriesCount,
+    paidSeriesCount,
     totalTests: totalTestsCount,
     totalQuestions: totalQuestionsCount,
     totalRevenue,
     testsAttempted: attemptsCount,
     completionRate: attemptsCount > 0 ? 88.5 : 0,
+    recentOrders,
     revenueChart: [
       { month: "Jan", revenue: Math.round(totalRevenue * 0.1), students: Math.round(studentsCount * 0.2) },
       { month: "Feb", revenue: Math.round(totalRevenue * 0.2), students: Math.round(studentsCount * 0.4) },
@@ -1915,6 +2484,7 @@ export async function getAdminDashboardStats() {
     topSeries,
   };
 }
+
 
 // -------------------------------------------------------------
 // BOOKMARK OPERATIONS (DATABASE DRIVEN)
@@ -1996,12 +2566,14 @@ export async function toggleBookmarkQuestion(
 // -------------------------------------------------------------
 // STUDENT TESTS RETRIEVAL (DATABASE DRIVEN)
 // -------------------------------------------------------------
-export async function getTestsForStudent(options?: { seriesId?: string }) {
+export async function getTestsForStudent(options?: { seriesId?: string; userId?: string }) {
+  let tests: any[] = [];
   if (isDbConfigured()) {
     try {
-      return await prisma.test.findMany({
+      tests = await prisma.test.findMany({
         where: {
           status: "PUBLISHED",
+          testSeries: { status: "PUBLISHED" },
           ...(options?.seriesId ? { testSeriesId: options.seriesId } : {}),
         },
         include: {
@@ -2012,16 +2584,66 @@ export async function getTestsForStudent(options?: { seriesId?: string }) {
         },
         orderBy: { orderIndex: "asc" },
       });
-    } catch (err) {
-      console.error("getTestsForStudent error:", err);
-      return [];
+    } catch (err: any) {
+      if (err?.message?.includes("Can't reach")) markDbUnreachable();
     }
   }
 
-  return memoryState.tests.filter(
-    (t) => t.status === "PUBLISHED" && (!options?.seriesId || t.testSeriesId === options.seriesId)
-  );
+  if (tests.length === 0) {
+    tests = memoryState.tests
+      .filter((t) => {
+        if (t.status !== "PUBLISHED") return false;
+        const series = memoryState.testSeries.find((ts) => ts.id === t.testSeriesId);
+        if (!series || series.status !== "PUBLISHED") return false;
+        if (options?.seriesId && t.testSeriesId !== options.seriesId) return false;
+        return true;
+      })
+      .map((t) => ({
+        ...t,
+        testSeries: memoryState.testSeries.find((ts) => ts.id === t.testSeriesId) || null,
+        testQuestions: (t.questionIds || []).map((id) => ({ id })),
+      }));
+  }
+
+  // If userId provided, annotate whether student has access.
+  // Non-purchased students can preview only 3 tests for the selected series.
+  if (options?.userId) {
+    const isPro = await hasActiveProAccess(options.userId);
+    const userOrders = await getUserOrders(options.userId);
+    const paidSeriesSet = new Set(
+      userOrders.filter((o: any) => o.status === "PAID").map((o: any) => o.testSeriesId)
+    );
+
+    const isFullAccess = isPro || (options?.seriesId && paidSeriesSet.has(options.seriesId));
+    const previewLimit = isFullAccess ? Number.MAX_SAFE_INTEGER : 3;
+
+    const visibleTests = tests.slice(0, previewLimit);
+
+    return visibleTests.map((t) => {
+      const isFree = Number(t.testSeries?.price ?? 0) === 0 || Number(t.testSeries?.discountPrice ?? 1) === 0;
+      const isPurchased = isPro || paidSeriesSet.has(t.testSeriesId);
+      const isAccessible = isFree || isPurchased || isPro;
+      return {
+        ...t,
+        isFree,
+        isPurchased,
+        isAccessible,
+        isProUnlocked: isPro,
+      };
+    });
+  }
+
+  return tests.map((t) => {
+    const isFree = Number(t.testSeries?.price ?? 0) === 0 || Number(t.testSeries?.discountPrice ?? 1) === 0;
+    return {
+      ...t,
+      isFree,
+      isPurchased: false,
+      isAccessible: isFree,
+    };
+  });
 }
+
 
 // -------------------------------------------------------------
 // QUESTION LINKING & MANAGEMENT (DATABASE DRIVEN)

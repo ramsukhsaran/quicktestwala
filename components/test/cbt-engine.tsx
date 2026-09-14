@@ -21,6 +21,8 @@ import {
   X,
 } from "lucide-react";
 import { formatSecondsToTime } from "@/lib/utils";
+import { QuestionFigure } from "@/components/ui/question-figure";
+import { cleanQuestionTextWithFigure } from "@/lib/utils/figure";
 
 interface QuestionOption {
   id: string;
@@ -37,6 +39,7 @@ interface Question {
   topic?: string | null;
   marks: number;
   negativeMarks: number;
+  imageUrl?: string | null;
   options?: QuestionOption[];
 }
 
@@ -596,8 +599,15 @@ export function CBTEngine({ attempt }: { attempt: TestAttempt }) {
 
               {/* Question Text */}
               <div className="text-sm sm:text-base font-medium text-foreground leading-relaxed whitespace-pre-line py-2">
-                {currentQ.questionText}
+                {cleanQuestionTextWithFigure(currentQ.questionText) || currentQ.questionText}
               </div>
+
+              {/* Question Figure / Diagram */}
+              <QuestionFigure
+                imageUrl={currentQ.imageUrl}
+                questionText={currentQ.questionText}
+                caption={`Question ${currentQuestionIndex + 1} Figure`}
+              />
 
               {/* Options or Numerical Input */}
               {currentQ.questionType === "NUMERICAL" ? (

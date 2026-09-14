@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/auth/session";
 import { bulkCreateQuestions } from "@/lib/data/store";
 import { csvQuestionImportSchema } from "@/lib/validations/test";
+import { extractQuestionFigureUrl } from "@/lib/utils/figure";
 import { apiSuccess, apiError, apiUnauthorized, apiForbidden } from "@/lib/api/response";
 
 export async function POST(req: NextRequest) {
@@ -23,6 +24,7 @@ export async function POST(req: NextRequest) {
       explanation?: string;
       marks?: number;
       negativeMarks?: number;
+      imageUrl?: string;
       correctNumericalAnswer?: string;
       options?: { optionKey: string; optionText: string; isCorrect: boolean }[];
     }> = [];
@@ -43,6 +45,7 @@ export async function POST(req: NextRequest) {
           explanation: item.explanation || "",
           marks: item.marks !== undefined ? Number(item.marks) : 2.0,
           negativeMarks: item.negativeMarks !== undefined ? Number(item.negativeMarks) : 0.5,
+          imageUrl: item.imageUrl || extractQuestionFigureUrl(item),
           correctNumericalAnswer: item.correctNumericalAnswer,
           options: Array.isArray(item.options) ? item.options : [],
         });
@@ -58,6 +61,7 @@ export async function POST(req: NextRequest) {
 
       const data = parsed.data;
       const correct = data.correct_answer.toUpperCase().trim();
+      const figureUrl = extractQuestionFigureUrl(item);
       const options = [
         { optionKey: "A", optionText: data.option_a || "", isCorrect: correct === "A" },
         { optionKey: "B", optionText: data.option_b || "", isCorrect: correct === "B" },
@@ -74,6 +78,7 @@ export async function POST(req: NextRequest) {
         explanation: data.explanation || "",
         marks: data.marks,
         negativeMarks: data.negative_marks,
+        imageUrl: figureUrl,
         correctNumericalAnswer: options.length === 0 ? correct : undefined,
         options: options.length > 0 ? options : undefined,
       });

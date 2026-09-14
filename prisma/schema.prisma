@@ -41,6 +41,11 @@ enum OrderStatus {
   REFUNDED
 }
 
+enum OrderPlanType {
+  SERIES_SINGLE
+  PRO_FULL_ACCESS
+}
+
 enum AttemptStatus {
   NOT_STARTED
   IN_PROGRESS
@@ -217,20 +222,22 @@ model TestQuestion {
 }
 
 model Order {
-  id            String      @id @default(uuid())
-  orderNumber   String      @unique @map("order_number")
-  userId        String      @map("user_id")
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  testSeriesId  String      @map("test_series_id")
-  testSeries    TestSeries  @relation(fields: [testSeriesId], references: [id], onDelete: Cascade)
-  amount        Int
-  currency      String      @default("INR")
-  status        OrderStatus @default(PENDING)
-  paymentMethod String      @default("RAZORPAY") @map("payment_method")
-  createdAt     DateTime    @default(now()) @map("created_at")
-  updatedAt     DateTime    @updatedAt @map("updated_at")
+  id               String       @id @default(uuid())
+  orderNumber      String       @unique @map("order_number")
+  userId           String       @map("user_id")
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  testSeriesId     String       @map("test_series_id")
+  testSeries       TestSeries   @relation(fields: [testSeriesId], references: [id], onDelete: Cascade)
+  amount           Int
+  currency         String       @default("INR")
+  status           OrderStatus  @default(PENDING)
+  planType         OrderPlanType @default(SERIES_SINGLE) @map("plan_type")
+  paymentMethod    String       @default("RAZORPAY") @map("payment_method")
+  accessExpiresAt   DateTime?    @map("access_expires_at")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
 
-  payments      Payment[]
+  payments         Payment[]
 
   @@index([userId])
   @@index([testSeriesId])
